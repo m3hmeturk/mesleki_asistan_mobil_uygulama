@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:intl/intl.dart'; // Yeni kurduğumuz paket
+import 'package:firebase_auth/firebase_auth.dart'; // Bunu ekliyoruz
 
 class ChatPage extends StatefulWidget {
   const ChatPage({super.key});
@@ -15,6 +16,26 @@ class _ChatPageState extends State<ChatPage> {
   final List<Map<String, dynamic>> _messages = [];
   bool _isTyping = false; // Yapay zeka düşünürken gözükecek
 
+  // --- YENİ EKLENEN KISIM BAŞLANGICI ---
+  String _kullaniciAdi = "Kullanıcı"; // Varsayılan isim
+
+  @override
+  void initState() {
+    super.initState();
+    _kullaniciBilgisiniAl();
+  }
+
+  void _kullaniciBilgisiniAl() {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null && user.email != null) {
+      // E-postanın '@' işaretinden önceki kısmını alıyor
+      String emailIsim = user.email!.split('@')[0];
+      // İlk harfini büyük yapıyor (Örn: mehmet -> Mehmet, cansu -> Cansu)
+      setState(() {
+        _kullaniciAdi = emailIsim[0].toUpperCase() + emailIsim.substring(1);
+      });
+    }
+  }
   // Mesaj Gönderme Fonksiyonu
   Future<void> _sendMessage() async {
     if (_controller.text.trim().isEmpty) return;
@@ -61,13 +82,7 @@ class _ChatPageState extends State<ChatPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       // Arka planı bembeyaz yaparak tasarım bütünlüğünü sağlıyoruz
-      backgroundColor: Colors.white, 
-      appBar: AppBar(
-        title: const Text("Kariyer Asistanı AI", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
-        centerTitle: true,
-        elevation: 0,
-        backgroundColor: Colors.white,
-      ),
+      
       body: Column(
         children: [
           // Mesajların Listelendiği Alan
@@ -97,9 +112,17 @@ class _ChatPageState extends State<ChatPage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.rocket_launch, size: 80, color: Colors.deepPurple.withOpacity(0.1)),
+          Icon(
+            Icons.rocket_launch, 
+            size: 80, 
+            // Rengi temaya göre dinamik yaptık:
+            color: Theme.of(context).brightness == Brightness.dark 
+                ? Colors.deepPurple.shade200.withAlpha(40) 
+                : Colors.deepPurple.withAlpha(25),
+          ),
           const SizedBox(height: 20),
-          const Text("Merhaba Mehmet! 👋", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          // const KELİMESİNİ SİLDİK VE DEĞİŞKENİ EKLEDİK:
+          Text("Merhaba $_kullaniciAdi! 👋", style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 40, vertical: 10),
             child: Text("Bugün kariyer yolculuğun için ne yapabiliriz? Bana istediğini sorabilirsin.", 
@@ -109,7 +132,6 @@ class _ChatPageState extends State<ChatPage> {
       ),
     );
   }
-
   // MESAJ BALONU TASARIMI
   Widget _buildMessageBubble(Map<String, dynamic> msg) {
     bool isUser = msg["role"] == "user";
@@ -155,12 +177,12 @@ class _ChatPageState extends State<ChatPage> {
   // ALTTAKİ YAZMA ALANI
   Widget _buildInputArea() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Colors.grey[200]!)),
-      ),
-      child: Row(
+        padding: const EdgeInsets.all(8.0),
+        // Arka planı temaya göre belirle:
+        color: Theme.of(context).brightness == Brightness.dark 
+            ? const Color(0xFF1E1E1E) // Koyu modda şık bir antrasit
+            : Colors.white, // Gündüz modunda beyaz
+        child: Row(
         children: [
           Expanded(
             child: TextField(
@@ -168,7 +190,7 @@ class _ChatPageState extends State<ChatPage> {
               decoration: InputDecoration(
                 hintText: "Asistana bir şey sor...",
                 filled: true,
-                fillColor: Colors.grey[100],
+                fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.grey[800] : Colors.grey.shade100,
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 20),
               ),

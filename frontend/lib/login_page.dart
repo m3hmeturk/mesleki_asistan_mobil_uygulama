@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/gestures.dart'; // Tıklanabilir yazı için gerekli
-import 'main_screen.dart';
+
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -54,12 +54,10 @@ class _LoginPageState extends State<LoginPage> {
       }
 
       if (mounted) {
-  Navigator.pushReplacement(
-    context,
-    MaterialPageRoute(builder: (context) => const MainScreen()),
-  );
+        Navigator.pushReplacementNamed(context, '/main');
+      }
 }
-    } catch (e) {
+     catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Giriş Başarısız. Bilgilerinizi kontrol edin."), backgroundColor: Colors.red),
