@@ -162,7 +162,8 @@ class _LoginPageState extends State<LoginPage> {
                       recognizer: TapGestureRecognizer()
                         ..onTap = () {
                           // Kayıt sayfasına geri döner
-                          Navigator.pop(context); 
+                          // Kayıt Ol yazısına tıklandığında çalışacak kod:
+                          Navigator.pushReplacementNamed(context, '/register');
                         },
                     ),
                   ],

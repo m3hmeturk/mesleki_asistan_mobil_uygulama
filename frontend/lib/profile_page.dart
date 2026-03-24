@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'main.dart';
+import 'settings_page.dart';
+import 'notifications_page.dart';
+import 'security_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -52,12 +55,14 @@ class _ProfilePageState extends State<ProfilePage> {
           const SizedBox(height: 40),
           const Divider(indent: 30, endIndent: 30), // Araya ince bir çizgi
           
-          // Ayar Listesi
-          _buildProfileOption(Icons.settings, "Uygulama Ayarları"),
-          _buildProfileOption(Icons.notifications, "Bildirimler"),
-          _buildProfileOption(Icons.shield, "Gizlilik ve Güvenlik"),
-          _buildDarkModeToggle(), // Yeni eklediğimiz switch
-
+          _buildDarkModeToggle(), 
+          const SizedBox(height: 10),
+          // Uygulama Ayarlarına yeni sayfamızı bağladık!
+          _buildProfileOption(context, Icons.settings, "Uygulama Ayarları", const SettingsPage()),
+          
+          // Bildirimler ve Güvenlik sayfalarını bağladık!
+          _buildProfileOption(context, Icons.notifications, "Bildirimler", const NotificationsPage()),
+          _buildProfileOption(context, Icons.security, "Gizlilik ve Güvenlik", const SecurityPage()),
           const Spacer(), // Butonu en aşağıya iter
           
           // ÇIKIŞ YAP BUTONU
@@ -83,16 +88,28 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  // Profil seçenekleri için yardımcı widget
-  Widget _buildProfileOption(IconData icon, String title) {
+  // Güncellenmiş Profil Menü Şablonu (Tıklanabilir)
+  Widget _buildProfileOption(BuildContext context, IconData icon, String title, Widget? destinationPage) {
     return ListTile(
       leading: Icon(icon, color: Colors.deepPurple),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
-      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+      trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
       onTap: () {
-        // Şimdilik sadece tıklama efekti
+        if (destinationPage != null) {
+          // Eğer gidecek bir sayfa verildiyse oraya yönlendir
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => destinationPage),
+          );
+        } else {
+          // Sayfa henüz yapılmadıysa uyarı ver
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("$title sayfası yapım aşamasında!")),
+          );
+        }
       },
     );
+  }
   }
   Widget _buildDarkModeToggle() {
     return ListTile(
@@ -117,4 +134,3 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
     );
   }
-}
