@@ -10,6 +10,8 @@ import 'splash_screen.dart';
 import 'tests_page.dart';
 import 'roadmap_page.dart';
 import 'onboarding_page.dart';
+import 'package:provider/provider.dart';
+import 'roadmap_provider.dart';
 
 // Tüm uygulamanın dinleyeceği tema şalteri
 final ValueNotifier<ThemeMode> temaSalteri = ValueNotifier(ThemeMode.system);
@@ -18,7 +20,14 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp(const KariyerUygulamasi()); 
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => RoadmapProvider()),
+      ],
+      child: const KariyerUygulamasi(), // Senin mevcut sınıfın
+    ),
+  );
 }
 
 class KariyerUygulamasi extends StatelessWidget {
