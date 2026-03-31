@@ -12,11 +12,13 @@ import 'roadmap_page.dart';
 import 'onboarding_page.dart';
 import 'package:provider/provider.dart';
 import 'roadmap_provider.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 // Tüm uygulamanın dinleyeceği tema şalteri
 final ValueNotifier<ThemeMode> temaSalteri = ValueNotifier(ThemeMode.system);
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );

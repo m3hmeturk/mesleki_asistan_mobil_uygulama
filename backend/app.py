@@ -1,7 +1,7 @@
 import os
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-from groq import Groq
+from openai import OpenAI  # OpenAI kütüphanesini kullanıyoruz
 from dotenv import load_dotenv
 from pymongo import MongoClient
 import certifi
@@ -18,7 +18,7 @@ CORS(app)
 # MONGODB BAĞLANTISI
 # ==========================================
 try:
-    # Veritabanına bağlanıyoruz (Değişken adını mongo_client yaptık)
+    # Veritabanına bağlanıyoruz
     mongo_client = MongoClient(os.getenv("MONGO_URI"), tls=True, tlsAllowInvalidCertificates=True)
     
     # Sunucuya "ping" atıp bağlantıyı test ediyoruz
@@ -26,43 +26,38 @@ try:
     print("🚀 HARİKA! MongoDB'ye başarıyla bağlandın!")
     
     # Veritabanı ve Koleksiyon (Tablo) tanımlamaları
-    db = mongo_client["MeslekiAsistanDB"] # Veritabanımızın adı
-    users_collection = db["kullanicilar"] # Kullanıcıların kaydedileceği klasör
+    db = mongo_client["MeslekiAsistanDB"] 
+    users_collection = db["kullanicilar"] 
+    # YENİ: Mülakat sonuçları için yeni bir koleksiyon (tablo) tanımlıyoruz
+    interviews_collection = db["mulakatlar"] 
     
 except Exception as e:
     print("❌ MongoDB Bağlantı Hatası:", e)
 
 
-# ==========================================
-# YAPAY ZEKA (GROQ) BAĞLANTISI
-# ==========================================
-# Groq İstemcisini Başlatıyoruz (Çakışma olmaması için groq_client yaptık)
-groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-
+# --- OPENAI BAĞLANTISI ---
+# Groq yerine artık OpenAI kullanıyoruz
+openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # ==========================================
-# KULLANICI KAYIT API'Sİ (Flutter'dan buraya veri gelecek)
+# KULLANICI KAYIT API'Sİ
 # ==========================================
 @app.route('/api/kayit', methods=['POST'])
 def kullanici_kayit():
     try:
-        # 1. Flutter'dan gelen veriyi alıyoruz
         data = request.json
         uid = data.get('uid')
         ad = data.get('ad')
         email = data.get('email')
 
-        # Eğer eksik bilgi varsa hata dön
         if not uid or not email:
             return jsonify({"hata": "Eksik bilgi gönderildi"}), 400
 
-        # 2. Bu kullanıcı daha önce veritabanına eklenmiş mi kontrol et
         mevcut_kullanici = users_collection.find_one({"uid": uid})
         
         if mevcut_kullanici:
             return jsonify({"mesaj": "Kullanıcı zaten veritabanında mevcut."}), 200
 
-        # 3. Kullanıcı yeniyse MongoDB'ye eklenecek şablonu oluştur
         yeni_kullanici = {
             "uid": uid,
             "ad": ad,
@@ -70,7 +65,6 @@ def kullanici_kayit():
             "kayit_tarihi": datetime.datetime.utcnow()
         }
         
-        # 4. Veritabanına kaydet!
         users_collection.insert_one(yeni_kullanici)
         print(f"✅ YENİ KULLANICI KAYDEDİLDİ: {ad} ({email})")
 
@@ -82,14 +76,37 @@ def kullanici_kayit():
 
 
 # ==========================================
-# DİĞER API UÇ NOKTALARI
+# YENİ: MÜLAKAT SONUCUNU KAYDETME API'Sİ
 # ==========================================
-@app.route('/api/health', methods=['GET'])
-def health_check():
-    return jsonify({"status": "success", "message": "Sunucu çalışıyor!"})
+@app.route('/api/save_interview', methods=['POST'])
+def save_interview():
+    try:
+        data = request.json
+        # Flutter'dan gelecek paket: uid, pozisyon, karne/rapor
+        uid = data.get('uid')
+        position = data.get('position')
+        report = data.get('report')
+
+        if not uid or not report:
+            return jsonify({"hata": "Veri eksik"}), 400
+
+        yeni_mulakat = {
+            "uid": uid,
+            "position": position,
+            "report": report,
+            "tarih": datetime.datetime.utcnow()
+        }
+
+        interviews_collection.insert_one(yeni_mulakat)
+        return jsonify({"status": "success", "message": "Mülakat başarıyla kaydedildi!"}), 201
+
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 
-# YENİ: Groq ile Konuşma Uç Noktası
+# ==========================================
+# SOHBET API'Sİ (OpenAI GPT-4o-mini ile güncellendi)
+# ==========================================
 @app.route('/api/chat', methods=['POST'])
 def chat_with_ai():
     try:
@@ -99,8 +116,9 @@ def chat_with_ai():
         if not kullanici_mesaji:
             return jsonify({"error": "Lütfen bir mesaj gönderin."}), 400
 
-        # Meta'nın zeki Llama 3 modelini kullanarak cevap üretiyoruz
-        chat_completion = groq_client.chat.completions.create(
+        # OpenAI üzerinden cevap üretiyoruz
+        response = openai_client.chat.completions.create(
+            model="gpt-4o-mini", # En hızlı ve ucuz model
             messages=[
                 {
                     "role": "system",
@@ -111,21 +129,23 @@ def chat_with_ai():
                     "content": kullanici_mesaji
                 }
             ],
-            model="llama-3.3-70b-versatile",
         )
         
-        # Gelen cevabın sadece metin kısmını alıyoruz
-        response_text = chat_completion.choices[0].message.content
-
+        response_text = response.choices[0].message.content
         return jsonify({"ai_response": response_text})
 
     except Exception as e:
+        print("❌ Chat Hatası:", e)
         return jsonify({"error": str(e)}), 500
 
 
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    return jsonify({"status": "success", "message": "Sunucu çalışıyor!"})
+
+
 # ==========================================
-# SUNUCUYU ÇALIŞTIRAN KOD (KESİNLİKLE EN ALTTA OLMALI)
+# SUNUCUYU ÇALIŞTIRAN KOD
 # ==========================================
 if __name__ == '__main__':
-    # host='0.0.0.0' sayesinde telefonlar bu sunucuya bağlanabilir
     app.run(host='0.0.0.0', port=5000, debug=True)

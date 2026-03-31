@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'roadmap_provider.dart';
 import 'roadmap_model.dart';
+import 'ai_service.dart';
 
 class RoadmapPage extends StatelessWidget {
   const RoadmapPage({super.key});
@@ -38,6 +39,11 @@ class RoadmapPage extends StatelessWidget {
         ),
         centerTitle: true,
         actions: [
+          // YENİ EKLENEN SÖZLÜK BUTONU
+          IconButton(
+            icon: Icon(Icons.menu_book, color: theme.colorScheme.primary),
+            onPressed: () => _showDictionarySheet(context),
+          ),
           IconButton(
             icon: Icon(Icons.emoji_events, color: Colors.amber.shade600),
             onPressed: () => _showBadgesSheet(context, model),
@@ -78,6 +84,14 @@ class RoadmapPage extends StatelessWidget {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (_) => _BadgesSheet(badges: model.badges),
+    );
+  }
+  void _showDictionarySheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const _DictionarySheet(),
     );
   }
 }
@@ -715,6 +729,203 @@ class _EmptyState extends StatelessWidget {
           Text('Önce kariyer testini tamamla',
               style: TextStyle(fontSize: 14, color: theme.colorScheme.onSurface.withValues(alpha: 0.5))),
         ],
+      ),
+    );
+  }
+}
+// ── Jargon Sözlüğü Bottom Sheet (Yapay Zeka Destekli) ──────────────
+class _DictionarySheet extends StatefulWidget {
+  const _DictionarySheet();
+
+  @override
+  State<_DictionarySheet> createState() => _DictionarySheetState();
+}
+
+class _DictionarySheetState extends State<_DictionarySheet> {
+  String aramaMetni = "";
+  bool _isAiLoading = false;
+  String? _aiCevap;
+
+  // Kendi yerel sözlüğümüz (Hızlı sonuçlar için)
+  final List<Map<String, String>> sozluk = [
+    {"term": "API", "desc": "Farklı yazılımların birbiriyle iletişim kurmasını sağlayan dijital köprü."},
+    {"term": "Backend", "desc": "Bir uygulamanın kullanıcı tarafından görünmeyen, veritabanı ve sunucu tarafı."},
+    {"term": "Frontend", "desc": "Kullanıcının etkileşime girdiği, uygulamanın ön yüzü ve tasarımı."},
+    {"term": "Framework", "desc": "Yazılımcıların işini kolaylaştıran, önceden hazırlanmış kod iskeleti (Örn: Flutter)."},
+    {"term": "Scrum", "desc": "Yazılım ekiplerinin projeleri küçük parçalara bölerek hızlı yönetme taktiği."},
+    {"term": "UI / UX", "desc": "Kullanıcı arayüzü tasarımı (UI) ve kullanım kolaylığı/deneyimi (UX)."},
+    {"term": "Bug", "desc": "Yazılımdaki kod hatalarına verilen isim."},
+    {"term": "Deploy", "desc": "Yazılan kodun canlı sunucuya (herkesin kullanımına) aktarılma işlemi."},
+  ];
+
+  // Yapay zekaya sorma fonksiyonu
+  Future<void> _yapayZekayaSor() async {
+    setState(() {
+      _isAiLoading = true;
+      _aiCevap = null;
+    });
+
+    // ai_service.dart içindeki beyni çalıştırıyoruz!
+    final cevap = await AiService.terimiAcikla(aramaMetni);
+
+    setState(() {
+      _isAiLoading = false;
+      _aiCevap = cevap;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+
+    // Yerel sözlükte arama yap
+    final filtrelenmisSozluk = sozluk
+        .where((item) => item["term"]!.toLowerCase().contains(aramaMetni.toLowerCase()))
+        .toList();
+
+    return Container(
+      margin: EdgeInsets.only(bottom: bottomInset),
+      decoration: BoxDecoration(
+        color: theme.scaffoldBackgroundColor,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
+      ),
+      child: DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.6,
+        maxChildSize: 0.9,
+        minChildSize: 0.4,
+        builder: (_, scrollCtrl) => Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+          child: Column(
+            children: [
+              Container(
+                width: 40, height: 5,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.outline.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Icon(Icons.menu_book, color: theme.colorScheme.primary, size: 24),
+                  const SizedBox(width: 10),
+                  Text('Jargon Sözlüğü',
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
+                ],
+              ),
+              const SizedBox(height: 15),
+              TextField(
+                onChanged: (value) {
+                  setState(() {
+                    aramaMetni = value;
+                    _aiCevap = null; // Yeni arama yapılınca eski AI cevabını temizle
+                  });
+                },
+                decoration: InputDecoration(
+                  hintText: 'Terim ara (Örn: API, Agile)...',
+                  hintStyle: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.4), fontSize: 14),
+                  prefixIcon: Icon(Icons.search, color: theme.colorScheme.primary, size: 20),
+                  filled: true,
+                  fillColor: theme.colorScheme.onSurface.withOpacity(0.05),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(15),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                ),
+              ),
+              const SizedBox(height: 15),
+              Expanded(
+                child: filtrelenmisSozluk.isNotEmpty
+                    // EĞER KELİME BİZİM LİSTEDEYSE BUNU GÖSTER
+                    ? ListView.builder(
+                        controller: scrollCtrl,
+                        itemCount: filtrelenmisSozluk.length,
+                        itemBuilder: (context, index) {
+                          final item = filtrelenmisSozluk[index];
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: theme.cardColor,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: theme.colorScheme.outline.withOpacity(0.1)),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(item["term"]!,
+                                      style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.primary, fontSize: 14)),
+                                  const SizedBox(height: 4),
+                                  Text(item["desc"]!,
+                                      style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.7), fontSize: 12, height: 1.3)),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      )
+                    // EĞER KELİME BİZİM LİSTEDE YOKSA YAPAY ZEKA DEVREYE GİRSİN
+                    : aramaMetni.isNotEmpty
+                        ? ListView(
+                            controller: scrollCtrl,
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 20),
+                                child: Text(
+                                  '"$aramaMetni" kelimesi sözlükte yok.',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.6)),
+                                ),
+                              ),
+                              if (_isAiLoading)
+                                const Center(child: CircularProgressIndicator())
+                              else if (_aiCevap != null)
+                                Container(
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: theme.colorScheme.primary.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: theme.colorScheme.primary.withOpacity(0.3)),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Icon(Icons.auto_awesome, color: theme.colorScheme.primary, size: 18),
+                                          const SizedBox(width: 8),
+                                          Text('Yapay Zeka Yanıtı',
+                                              style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.primary)),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(_aiCevap!,
+                                          style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 14, height: 1.4)),
+                                    ],
+                                  ),
+                                )
+                              else
+                                ElevatedButton.icon(
+                                  onPressed: _yapayZekayaSor,
+                                  icon: const Icon(Icons.auto_awesome, color: Colors.white),
+                                  label: const Text('Yapay Zekaya Sor', style: TextStyle(color: Colors.white)),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: theme.colorScheme.primary,
+                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  ),
+                                ),
+                            ],
+                          )
+                        : const SizedBox.shrink(),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
