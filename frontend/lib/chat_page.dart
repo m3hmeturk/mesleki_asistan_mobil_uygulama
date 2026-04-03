@@ -106,6 +106,7 @@ class _ChatPageState extends State<ChatPage> {
           "content": m["text"] as String
         }).toList();
 
+        // 1. Yapay Zekadan mülakat sorusunu veya bitiş karnesini al
         String response = await AiService.mulakatSohbet(history, pozisyon: _secilenPozisyon);
 
         setState(() {
@@ -115,22 +116,62 @@ class _ChatPageState extends State<ChatPage> {
             "time": DateFormat('HH:mm').format(DateTime.now())
           });
         });
+
+        // 2. OYUNLAŞTIRMA: Eğer kullanıcı mülakatı bitirdiyse, bu karneyi backend'e gönder ve XP al!
+        if (userMsg.toLowerCase().contains("mülakatı bitir")) {
+          final user = FirebaseAuth.instance.currentUser;
+          if (user != null) {
+            try {
+              final dbResponse = await http.post(
+                Uri.parse('http://10.24.2.85:5000/api/save_interview'), // DİKKAT: IP adresin güncel olmalı!
+                headers: {"Content-Type": "application/json; charset=utf-8"},
+                body: jsonEncode({
+                  "uid": user.uid,
+                  "position": _secilenPozisyon,
+                  "report": response // Yapay zekanın az önce verdiği karne metni
+                }),
+              );
+              
+              if (dbResponse.statusCode == 201) {
+                final data = jsonDecode(dbResponse.body);
+                // Kullanıcıya şık bir bildirim (SnackBar) ile XP kazandığını müjdele
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text("🏆 +${data['gained_xp']} XP Kazandın! Karnen profiline kaydedildi."),
+                      backgroundColor: Colors.green,
+                      duration: const Duration(seconds: 4),
+                    ),
+                  );
+                }
+              }
+            } catch (e) {
+              print("Veritabanı kayıt hatası: $e");
+            }
+          }
+        }
+
       } catch (e) {
         _showError("OpenAI bağlantı hatası!");
       } finally {
         setState(() => _isTyping = false);
       }
     } else {
-      // --- SENARYO 2: NORMAL CHAT (Flask Backend) ---
+      // --- SENARYO 2: NORMAL CHAT (Flask Backend ve Süper Hafıza) ---
       try {
+        final user = FirebaseAuth.instance.currentUser;
+        final uid = user?.uid ?? ""; 
+
         final response = await http.post(
           Uri.parse('http://10.24.2.85:5000/api/chat'), 
-          headers: {"Content-Type": "application/json; charset=utf-8"}, // charset eklendi
-          body: jsonEncode({"message": userMsg}),
+          headers: {"Content-Type": "application/json; charset=utf-8"},
+          body: jsonEncode({
+            "message": userMsg,
+            "uid": uid 
+          }),
         );
 
         if (response.statusCode == 200) {
-          // UTF-8 Decode eklendi (Türkçe karakter hatasını bu çözer)
           final data = jsonDecode(utf8.decode(response.bodyBytes)); 
           setState(() {
             _messages.add({

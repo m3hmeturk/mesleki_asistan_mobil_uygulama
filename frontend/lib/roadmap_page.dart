@@ -13,16 +13,42 @@ class RoadmapPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final provider = context.watch<RoadmapProvider>();
 
-    if (provider.isLoading) {
-      return const Center(child: CircularProgressIndicator());
+    // 1. Veriler Flask'tan gelirken ekranda şık bir yüklenme animasyonu göster
+    if (provider.isLoading || provider.dashboardData == null) {
+      return Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text("Gelişim Merkezin Hazırlanıyor...", style: TextStyle(color: Colors.grey)),
+            ],
+          ),
+        ),
+      );
     }
-
-    if (provider.model == null) {
-      return _EmptyState();
-    }
-
-    final model = provider.model!;
     final theme = Theme.of(context);
+    // 🌟 YENİ EKLENEN HAYAT KURTARICI KOD: Eğer harita boşsa, YZ Butonlu ekranı göster!
+    if (provider.model == null) {
+      return Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        appBar: AppBar(
+          backgroundColor: theme.scaffoldBackgroundColor,
+          elevation: 0,
+          title: Text(
+            'Gelişim Merkezim',
+            style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 20),
+          ),
+          centerTitle: true,
+        ),
+        body: _EmptyState(), // Az önce yazdığımız butonlu ekran buraya gelecek!
+      );
+    }
+    final model = provider.model!;
+    final dashboard = provider.dashboardData!; // FLASK'TAN GELEN GERÇEK VERİ KUTUMUZ!
+    
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -30,7 +56,7 @@ class RoadmapPage extends StatelessWidget {
         backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
         title: Text(
-          'Yol Haritam',
+          'Gelişim Merkezim', // Artık sayfanın adı bu!
           style: TextStyle(
             color: theme.colorScheme.onSurface,
             fontWeight: FontWeight.bold,
@@ -39,21 +65,20 @@ class RoadmapPage extends StatelessWidget {
         ),
         centerTitle: true,
         actions: [
-          // YENİ EKLENEN SÖZLÜK BUTONU
           IconButton(
             icon: Icon(Icons.menu_book, color: theme.colorScheme.primary),
             onPressed: () => _showDictionarySheet(context),
           ),
           IconButton(
             icon: Icon(Icons.emoji_events, color: Colors.amber.shade600),
-            onPressed: () => _showBadgesSheet(context, model),
+            onPressed: () => _showBadgesSheet(context, model, dashboard['badges'] ?? []), // Gerçek rozetleri gönderiyoruz
           ),
         ],
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         children: [
-          _SummaryCard(model: model),
+          _SummaryCard(model: model, dashboard: dashboard), // KARTA GERÇEK VERİYİ VERDİK!
           const SizedBox(height: 25),
           Row(
             children: [
@@ -77,7 +102,12 @@ class RoadmapPage extends StatelessWidget {
     );
   }
 
-  void _showBadgesSheet(BuildContext context, RoadmapModel model) {
+  void _showBadgesSheet(BuildContext context, RoadmapModel model, List<dynamic> earnedBadgeIds) {
+    // Backend'den gelen kazandığımız rozetlerin ID'lerini UI ile eşleştiriyoruz
+    for (var badge in model.badges) {
+      badge.isEarned = earnedBadgeIds.contains(badge.id) || earnedBadgeIds.contains("ilk_mulakat");
+    }
+    
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -86,6 +116,7 @@ class RoadmapPage extends StatelessWidget {
       builder: (_) => _BadgesSheet(badges: model.badges),
     );
   }
+
   void _showDictionarySheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -96,15 +127,32 @@ class RoadmapPage extends StatelessWidget {
   }
 }
 
-// ── Özet Kart ──────────────────────────────────────────────────────────────
+// ── Özet Kart (GERÇEK VERİLERLE ÇALIŞAN KISIM) ───────────────────────────────────
 class _SummaryCard extends StatelessWidget {
   final RoadmapModel model;
-  const _SummaryCard({required this.model});
+  final Map<String, dynamic> dashboard; // Backend verisi buraya geldi
+  
+  const _SummaryCard({required this.model, required this.dashboard});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     
+    // --- FLASK'TAN GELEN DEĞERLERİ ÇIKARTIYORUZ ---
+    final ad = dashboard['ad'] ?? "Kullanıcı";
+    final levelInfo = dashboard['level'] ?? {};
+    final currentLevel = levelInfo['current'] ?? 1;
+    final xp = levelInfo['xp'] ?? 0;
+    final xpForNext = levelInfo['xp_for_next'] ?? 100;
+    
+    final stats = dashboard['stats'] ?? {};
+    final totalInterviews = stats['total_interviews'] ?? 0;
+    final earnedBadgesCount = (dashboard['badges'] as List?)?.length ?? 0;
+    
+    // XP Barının % kaç dolu olduğunu matematiğe döküyoruz
+    double levelProgress = (xp % xpForNext) / xpForNext;
+    if (levelProgress.isNaN || levelProgress.isInfinite) levelProgress = 0.0;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -133,13 +181,13 @@ class _SummaryCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(model.careerTitle,
+                    Text('Merhaba, $ad! 👋', // GERÇEK ADIN YAZIYOR
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                           color: theme.colorScheme.onSurface,
                         )),
-                    Text('Hedeflenen Kariyer',
+                    Text('Hedef: ${model.careerTitle}',
                         style: TextStyle(
                           fontSize: 13,
                           color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
@@ -147,30 +195,30 @@ class _SummaryCard extends StatelessWidget {
                   ],
                 ),
               ),
-              _StatusBadge(label: 'Aktif', color: Colors.teal),
+              _StatusBadge(label: 'Seviye $currentLevel', color: Colors.teal), // GERÇEK SEVİYE
             ],
           ),
           const SizedBox(height: 20),
           Row(
             children: [
-              _StatBox(value: '${model.totalXP}', label: 'Toplam XP', context: context),
+              _StatBox(value: '$xp', label: 'Toplam XP', context: context), // GERÇEK XP
               const SizedBox(width: 10),
-              _StatBox(value: '${model.completedStepCount}/${model.steps.length}', label: 'Aşama', context: context),
+              _StatBox(value: '$totalInterviews', label: 'Mülakat', context: context), // GERÇEK MÜLAKAT
               const SizedBox(width: 10),
-              _StatBox(value: '${model.earnedBadgeCount}', label: 'Rozet', context: context),
+              _StatBox(value: '$earnedBadgesCount', label: 'Rozet', context: context), // GERÇEK ROZET SAYISI
             ],
           ),
           const SizedBox(height: 15),
           Row(
             children: [
-              Text('Seviye ${model.level}',
+              Text('Lv.$currentLevel',
                   style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
               const SizedBox(width: 10),
               Expanded(
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(10),
                   child: LinearProgressIndicator(
-                    value: model.levelProgress,
+                    value: levelProgress, // BARI GERÇEK XP İLE DOLDURDUK
                     minHeight: 8,
                     backgroundColor: theme.colorScheme.outline.withValues(alpha: 0.2),
                     color: theme.colorScheme.primary,
@@ -178,7 +226,7 @@ class _SummaryCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 10),
-              Text('${model.totalXP % 1000} / 1000',
+              Text('${xp % xpForNext} / $xpForNext', // KALAN XP'Yİ GÖSTERDİK
                   style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurface.withValues(alpha: 0.5))),
             ],
           ),
@@ -187,7 +235,6 @@ class _SummaryCard extends StatelessWidget {
     );
   }
 }
-
 class _StatBox extends StatelessWidget {
   final String value, label;
   final BuildContext context;
@@ -712,23 +759,67 @@ class _BadgeItem extends StatelessWidget {
   }
 }
 
-// ── Boş Durum ──────────────────────────────────────────────────────────────
-class _EmptyState extends StatelessWidget {
+// ── Boş Durum (YENİ YAPAY ZEKA BUTONLU HALİ) ──────────────────────────────────
+class _EmptyState extends StatefulWidget {
+  @override
+  State<_EmptyState> createState() => _EmptyStateState();
+}
+
+class _EmptyStateState extends State<_EmptyState> {
+  final TextEditingController _hedefController = TextEditingController();
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final provider = context.read<RoadmapProvider>(); // read kullanıyoruz çünkü butona basınca tetikleyeceğiz
+
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.map_outlined, size: 80, color: theme.colorScheme.onSurface.withValues(alpha: 0.2)),
-          const SizedBox(height: 20),
-          Text('Henüz bir yol haritası yok',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
-          const SizedBox(height: 10),
-          Text('Önce kariyer testini tamamla',
-              style: TextStyle(fontSize: 14, color: theme.colorScheme.onSurface.withValues(alpha: 0.5))),
-        ],
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 25.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.auto_awesome, size: 80, color: theme.colorScheme.primary.withValues(alpha: 0.5)),
+            const SizedBox(height: 20),
+            Text('Yol Haritan Henüz Yok',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
+            const SizedBox(height: 10),
+            Text('Yapay zekanın senin test sonuçlarına göre özel bir eğitim haritası çizmesine izin ver.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 14, color: theme.colorScheme.onSurface.withValues(alpha: 0.6))),
+            const SizedBox(height: 30),
+            TextField(
+              controller: _hedefController,
+              decoration: InputDecoration(
+                labelText: "Hedef Mesleğin Nedir? (Örn: Siber Güvenlik)",
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
+                prefixIcon: Icon(Icons.work, color: theme.colorScheme.primary),
+              ),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  if (_hedefController.text.isNotEmpty) {
+                    provider.generateRoadmap(_hedefController.text);
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Lütfen bir meslek girin!")),
+                    );
+                  }
+                },
+                icon: const Icon(Icons.rocket_launch, color: Colors.white),
+                label: const Text("Yapay Zeka ile Oluştur", style: TextStyle(color: Colors.white, fontSize: 16)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: theme.colorScheme.primary,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
