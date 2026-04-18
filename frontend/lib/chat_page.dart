@@ -123,7 +123,7 @@ class _ChatPageState extends State<ChatPage> {
           if (user != null) {
             try {
               final dbResponse = await http.post(
-                Uri.parse('http://10.24.2.85:5000/api/save_interview'), // DİKKAT: IP adresin güncel olmalı!
+                Uri.parse('http://10.161.28.101:5000/api/save_interview'), // DİKKAT: IP adresin güncel olmalı!
                 headers: {"Content-Type": "application/json; charset=utf-8"},
                 body: jsonEncode({
                   "uid": user.uid,
@@ -163,7 +163,7 @@ class _ChatPageState extends State<ChatPage> {
         final uid = user?.uid ?? ""; 
 
         final response = await http.post(
-          Uri.parse('http://10.24.2.85:5000/api/chat'), 
+          Uri.parse('http://10.161.28.101:5000/api/chat'), 
           headers: {"Content-Type": "application/json; charset=utf-8"},
           body: jsonEncode({
             "message": userMsg,

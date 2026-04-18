@@ -136,7 +136,7 @@ class _TestEnginePageState extends State<TestEnginePage> {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
         final response = await http.post(
-          Uri.parse('http://10.24.2.85:5000/api/save_test'), // DİKKAT: Kendi yerel IP adresini kontrol et!
+          Uri.parse('http://10.161.28.101:5000/api/save_test'), // DİKKAT: Kendi yerel IP adresini kontrol et!
           headers: {"Content-Type": "application/json; charset=utf-8"},
           body: jsonEncode({
             "uid": user.uid,

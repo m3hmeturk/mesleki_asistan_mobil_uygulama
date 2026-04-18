@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ ad }} - Profesyonel CV</title>
+    <style>
+        body { font-family: 'Arial', sans-serif; line-height: 1.6; color: #333; margin: 40px; }
+        .header { text-align: center; border-bottom: 3px solid #2c3e50; padding-bottom: 15px; margin-bottom: 25px; }
+        .name { font-size: 36px; font-weight: bold; color: #2c3e50; margin: 0; text-transform: uppercase; letter-spacing: 1px; }
+        .title { font-size: 22px; color: #7f8c8d; margin-top: 5px; font-weight: normal; }
+        .contact-info { font-size: 14px; color: #555; margin-top: 10px; }
+        .section { margin-bottom: 25px; }
+        .section-title { font-size: 20px; font-weight: bold; color: #2980b9; border-bottom: 1px solid #bdc3c7; padding-bottom: 5px; margin-bottom: 15px; text-transform: uppercase; }
+        .content { font-size: 15px; white-space: pre-line; }
+        .about-box { background-color: #ecf0f1; padding: 20px; border-left: 5px solid #2980b9; margin-bottom: 30px; border-radius: 0 5px 5px 0; }
+        .about-text { font-size: 15px; font-style: italic; color: #34495e; text-align: justify; }
+        .badge { display: inline-block; background-color: #ecf0f1; padding: 5px 10px; margin: 3px; border-radius: 15px; font-size: 14px; border: 1px solid #bdc3c7; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1 class="name">{{ ad }}</h1>
+        <h2 class="title">{{ meslek }}</h2>
+        <div class="contact-info">
+            {{ email }} | {{ telefon }} {% if linkedin %} | {{ linkedin }}{% endif %}
+        </div>
+    </div>
+
+    <div class="about-box">
+        <div class="about-text">
+            {{ hakkimda }}
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Eğitim Bilgileri</div>
+        <div class="content">{{ egitim }}</div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">İş ve Staj Deneyimleri</div>
+        <div class="content">{{ deneyim }}</div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Yetenekler</div>
+        <div class="content">{{ yetenekler }}</div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Projeler ve Başarılar</div>
+        <div class="content">{{ projeler }}</div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Yabancı Diller</div>
+        <div class="content">{{ diller }}</div>
+    </div>
+    <div style="position: fixed; bottom: 20px; right: 20px; font-size: 12px; color: #95a5a6; font-style: italic;">
+        ⚡ Mesleki Asistan ile üretilmiştir. (Ücretsiz Sürüm)
+    </div>
+</body>
+</html>

@@ -1,15 +1,26 @@
 import os
-from flask import Flask, jsonify, request
+import certifi
+import datetime
+import json
+import pdfkit
+import requests
+from flask import Flask, jsonify, request, send_file
 from flask_cors import CORS
 from openai import OpenAI  # OpenAI kütüphanesini kullanıyoruz
 from dotenv import load_dotenv
 from pymongo import MongoClient
-import certifi
-import datetime
-import json
+from jinja2 import Environment, FileSystemLoader
 
 # .env dosyasındaki gizli şifrelerimizi yüklüyoruz
 load_dotenv()
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+# ==========================================
+# 🚀 YENİ EKLENEN: PDF MOTORU AYARI
+# ==========================================
+# DİKKAT: Bilgisayarındaki wkhtmltopdf kurulum yolu burası olmalı. Farklıysa burayı değiştir.
+path_to_wkhtmltopdf = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe'
+pdf_config = pdfkit.configuration(wkhtmltopdf=path_to_wkhtmltopdf)
 
 app = Flask(__name__)
 # Flutter'dan gelen isteklere izin veriyoruz
@@ -40,80 +51,42 @@ except Exception as e:
 # Groq yerine artık OpenAI kullanıyoruz
 openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# ==========================================
-# KULLANICI KAYIT API'Sİ (GELİŞTİRİLMİŞ)
-# ==========================================
+# YENİ VE SADELEŞMİŞ KULLANICI ŞABLONU (v3)
 @app.route('/api/kayit', methods=['POST'])
-def kullanici_kayit():
-    try:
-        data = request.json
-        uid = data.get('uid')
-        ad = data.get('ad')
-        email = data.get('email')
+def kayit():
+    data = request.json
+    uid = data.get('uid')
+    ad = data.get('ad')
+    email = data.get('email')
 
-        if not uid or not email:
-            return jsonify({"hata": "Eksik bilgi gönderildi"}), 400
+    if not uid or not email:
+        return jsonify({"hata": "Eksik bilgi"}), 400
 
-        mevcut_kullanici = users_collection.find_one({"uid": uid})
-        
-        if mevcut_kullanici:
-            return jsonify({"mesaj": "Kullanıcı zaten veritabanında mevcut."}), 200
+    # Kullanıcı veritabanında var mı kontrolü
+    mevcut_kullanici = users_collection.find_one({"uid": uid})
+    if mevcut_kullanici:
+        return jsonify({"mesaj": "Kullanıcı zaten kayıtlı"}), 200
 
-        # --- YENİ VE GELİŞMİŞ KULLANICI ŞABLONU ---
-        yeni_kullanici = {
-            "uid": uid,
-            "ad": ad,
-            "email": email,
-            "kayit_tarihi": datetime.datetime.utcnow(),
-            
-            # 1. Seviye ve XP Sistemi
-            "level": {
-                "current": 1,
-                "title": "Çaylak",
-                "xp": 0,
-                "xp_for_next": 100
-            },
-            
-            # 2. Esnek Test Sonuçları (6 Testin Şablonu)
-            "test_results": {
-                "kisilik": {"completed": False, "result": None},
-                "meslek": {"completed": False, "result": None},
-                "ingilizce": {"completed": False, "result": None},
-                "liderlik": {"completed": False, "result": None},
-                "calisma_ortami": {"completed": False, "result": None},
-                "motivasyon": {"completed": False, "result": None}
-            },
-            
-            # 3. Yetenek Radar Grafiği Puanları (Başlangıçta hepsi 0)
-            "skill_scores": {
-                "teknik": 0,
-                "iletisim": 0,
-                "liderlik": 0,
-                "analitik": 0,
-                "sosyal": 0
-            },
-            
-            # 4. Oyunlaştırma ve Asistan Hafızası İçin Gerekli Olanlar
-            "badges": [], # Kazanılan rozetlerin ID'leri buraya gelecek
-            "selected_career": None, # Hedef meslek (Asistan ve Yol haritası için)
-            "stats": {
-                "total_chats": 0,
-                "total_interviews": 0,
-                "avg_interview_score": 0.0
-            }
-        }
-        
-        users_collection.insert_one(yeni_kullanici)
-        print(f"✅ YENİ KULLANICI KAYDEDİLDİ: {ad} ({email}) - Altyapı Hazır!")
-
-        return jsonify({"mesaj": "Kullanıcı başarıyla MongoDB'ye kaydedildi!"}), 201
-
-    except Exception as e:
-        print("❌ Kayıt Hatası:", e)
-        return jsonify({"hata": str(e)}), 500
+    # Yeni, sade ve profesyonel şablon (XP/Level/Rozet kaldırıldı)
+    yeni_kullanici = {
+        "uid": uid,
+        "ad": ad,
+        "email": email,
+        "credits": 100, # HOŞ GELDİN HEDİYESİ: 100 JETON 🪙
+        "test_results": {},
+        "skill_scores": {
+            "teknik": 0, "iletisim": 0, "liderlik": 0, "analitik": 0, "sosyal": 0
+        },
+        "tarih": datetime.datetime.utcnow()
+    }
+    users_collection.insert_one(yeni_kullanici)
+    yeni_kullanici["_id"] = str(yeni_kullanici["_id"])
+    print(f"✅ YENİ KULLANICI KAYDEDİLDİ: {ad} | Bakiye: 100 Jeton")
+    
+    return jsonify({"mesaj": "Kayıt başarılı", "kullanici": yeni_kullanici}), 201
 
 # ==========================================
-# YENİ VE GELİŞMİŞ: MÜLAKAT KAYDETME & OYUNLAŞTIRMA API'Sİ
+# SADELEŞTİRİLMİŞ MÜLAKAT YEDEKLEME (XP İptal Edildi)
 # ==========================================
 @app.route('/api/save_interview', methods=['POST'])
 def save_interview():
@@ -126,7 +99,7 @@ def save_interview():
         if not uid or not report:
             return jsonify({"hata": "Veri eksik"}), 400
 
-        # 1. Mülakatı 'mulakatlar' tablosuna yedekle
+        # Sadece mülakatı yedekle (Arka planda XP verme işlemi silindi)
         yeni_mulakat = {
             "uid": uid,
             "position": position,
@@ -135,56 +108,13 @@ def save_interview():
         }
         interviews_collection.insert_one(yeni_mulakat)
 
-        # 2. KULLANICIYA XP VE ROZET VERME (OYUNLAŞTIRMA)
-        user_data = users_collection.find_one({"uid": uid})
-        new_badge_earned = False
-        kazanilan_xp = 50 # Her mülakat 50 XP verir
-
-        if user_data:
-            # Mevcut değerleri alıyoruz
-            current_xp = user_data.get("level", {}).get("xp", 0)
-            total_interviews = user_data.get("stats", {}).get("total_interviews", 0)
-            badges = user_data.get("badges", [])
-
-            # Yeni değerleri hesaplıyoruz
-            new_total_interviews = total_interviews + 1
-            
-            # İlk Mülakat Rozeti Kontrolü
-            if new_total_interviews == 1 and "ilk_mulakat" not in badges:
-                badges.append("ilk_mulakat")
-                new_badge_earned = True
-                kazanilan_xp += 25 # Rozet bonusu olarak ekstra 25 XP!
-
-            new_xp = current_xp + kazanilan_xp
-            # Basit Seviye Sistemi (Her 100 XP'de 1 Seviye Atlar)
-            new_level = (new_xp // 100) + 1
-            
-            # Kullanıcının profilini güncelliyoruz
-            users_collection.update_one(
-                {"uid": uid},
-                {
-                    "$set": {
-                        "level.xp": new_xp,
-                        "level.current": new_level,
-                        "stats.total_interviews": new_total_interviews,
-                        "badges": badges
-                    }
-                }
-            )
-
-        print(f"🏆 MÜLAKAT BİTTİ: UID={uid} | +{kazanilan_xp} XP Kazanıldı! | Yeni Rozet: {new_badge_earned}")
-        
-        return jsonify({
-            "status": "success", 
-            "message": "Mülakat başarıyla kaydedildi!",
-            "gained_xp": kazanilan_xp,
-            "badge_earned": new_badge_earned
-        }), 201
+        print(f"📝 MÜLAKAT YEDEKLENDİ: UID={uid} | Pozisyon={position}")
+        return jsonify({"status": "success", "message": "Mülakat başarıyla kaydedildi!"}), 201
 
     except Exception as e:
         print("❌ Mülakat Kayıt Hatası:", e)
         return jsonify({"status": "error", "message": str(e)}), 500
-
+    
 # ==========================================
 # SOHBET API'Sİ (Süper Hafıza ve GPT-4o-mini)
 # ==========================================
@@ -283,11 +213,11 @@ def save_test():
         print("❌ Test Kayıt Hatası:", e)
         return jsonify({"status": "error", "message": str(e)}), 500
     
- # ==========================================
-# YENİ: GELİŞİM MERKEZİ (DASHBOARD) API'Sİ
 # ==========================================
-@app.route('/api/dashboard', methods=['POST'])
-def get_dashboard_data():
+# YENİ: PROFİL VE CÜZDAN (CÜZDAN BİLGİSİ VE RADAR VERİSİ)
+# ==========================================
+@app.route('/api/get_profile', methods=['POST'])
+def get_profile():
     try:
         data = request.json
         uid = data.get('uid')
@@ -296,28 +226,23 @@ def get_dashboard_data():
             return jsonify({"hata": "UID eksik"}), 400
 
         user_data = users_collection.find_one({"uid": uid})
-        
         if not user_data:
             return jsonify({"hata": "Kullanıcı bulunamadı"}), 404
 
-        # Flutter'a gönderilecek paket (Sadece gerekli verileri filtreliyoruz)
-        dashboard_data = {
+        # Sadece lazım olan temiz verileri gönderiyoruz
+        profile_data = {
             "ad": user_data.get("ad", "Kullanıcı"),
-            "level": user_data.get("level", {"current": 1, "title": "Çaylak", "xp": 0, "xp_for_next": 100}),
-            "stats": user_data.get("stats", {"total_chats": 0, "total_interviews": 0}),
-            "badges": user_data.get("badges", []),
+            "credits": user_data.get("credits", 0), # Jeton Bakiyesi 🪙
             "skill_scores": user_data.get("skill_scores", {"teknik": 0, "iletisim": 0, "liderlik": 0, "analitik": 0, "sosyal": 0}),
-            "test_results": user_data.get("test_results", {}),
-            "selected_career": user_data.get("selected_career", "Henüz Seçilmedi")
+            "test_results": user_data.get("test_results", {})
         }
 
-        print(f"📊 DASHBOARD VERİSİ ÇEKİLDİ: {dashboard_data['ad']} (Seviye {dashboard_data['level']['current']})")
-        return jsonify({"status": "success", "data": dashboard_data}), 200
+        print(f"💳 PROFİL ÇEKİLDİ: {profile_data['ad']} | Bakiye: {profile_data['credits']} Jeton")
+        return jsonify({"status": "success", "data": profile_data}), 200
 
     except Exception as e:
-        print("❌ Dashboard Çekme Hatası:", e)
-        return jsonify({"status": "error", "message": str(e)}), 500  
-import json # Eğer en üstte yoksa bunu eklemeyi unutma
+        print("❌ Profil Çekme Hatası:", e)
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 # ==========================================
 # YENİ: YAPAY ZEKA YOL HARİTASI ÜRETİCİSİ
@@ -394,7 +319,191 @@ def generate_roadmap():
         return jsonify({"status": "error", "message": str(e)}), 500
 
 
+# HTML Şablonlarının duracağı klasörü ayarla
+template_env = Environment(loader=FileSystemLoader('templates'))
 
+@app.route('/api/generate_cv', methods=['POST'])
+def generate_cv():
+    try:
+        data = request.json
+        uid = data.get('uid')
+        kisisel_bilgiler = data.get('bilgiler')
+        secilen_sablon = data.get('sablon_id', 'klasik')
+        cv_dili = data.get('cv_dili', 'Türkçe')
+        github_username = data.get('github_username', '').strip() # 🚀 YENİ: GitHub Kullanıcı Adı
+
+        # 1. AKILLI FİYATLANDIRMA
+        cv_maliyeti = 30 if secilen_sablon in ['modern', 'teknik'] else 2
+        if github_username:
+            cv_maliyeti += 20 # GitHub özelliği eklenirse +20 jeton daha kes!
+            
+        user = users_collection.find_one({"uid": uid})
+        mevcut_kredi = user.get("credits", 0) if user else 0
+        
+        if mevcut_kredi < cv_maliyeti:
+            return jsonify({
+                "error": "Yetersiz Jeton!", 
+                "current": mevcut_kredi,
+                "required": cv_maliyeti
+            }), 402
+
+        # 2. GITHUB'DAN PROJE ÇEKME (Derin Analiz - README Okuma)
+        github_projeleri = ""
+        if github_username:
+            try:
+                gh_url = f"https://api.github.com/users/{github_username}/repos?sort=updated&per_page=3"
+                gh_response = requests.get(gh_url)
+                if gh_response.status_code == 200:
+                    repos = gh_response.json()
+                    repo_ozetleri = []
+                    
+                    for repo in repos:
+                        isim = repo.get('name', 'Proje')
+                        dil = repo.get('language') or 'Çeşitli'
+                        aciklama = repo.get('description') or ''
+
+                        # 🚀 YENİ: README dosyasını çekme operasyonu!
+                        readme_icerik = ""
+                        readme_url = f"https://api.github.com/repos/{github_username}/{isim}/readme"
+                        # Sadece ham (raw) metni almak için özel bir başlık gönderiyoruz
+                        headers = {"Accept": "application/vnd.github.v3.raw"} 
+                        readme_response = requests.get(readme_url, headers=headers)
+                        
+                        if readme_response.status_code == 200:
+                            # AI'ın kafası karışmasın diye README'nin sadece ilk 600 karakterini alıyoruz (Özet için fazlasıyla yeterli)
+                            readme_icerik = readme_response.text[:600].replace('\n', ' ') 
+                            
+                        # Zekice Karar Mekanizması:
+                        # README varsa onu kullan, yoksa kısa açıklamayı kullan. 
+                        # İkisi de yoksa rezil olmamak için dilden yola çıkarak teknik bir cümle uydur.
+                        detay = readme_icerik if readme_icerik else aciklama
+                        if not detay or detay.isspace():
+                            detay = f"{dil} programlama dili mimarisi kullanılarak geliştirilmiş teknik yazılım projesi ve kod deposu."
+
+                        repo_ozetleri.append(f"📌 Proje: {isim} | Dil: {dil} | Detaylı İçerik: {detay}")
+                        
+                    github_projeleri = "\n".join(repo_ozetleri)
+                    print(f"✅ GITHUB DERİN ANALİZ BAŞARILI! Çekilen Veriler:\n{github_projeleri}")
+                else:
+                    print(f"❌ GITHUB BULUNAMADI! Durum Kodu: {gh_response.status_code}")
+            except Exception as e:
+                print("❌ GitHub Çekme Hatası:", e)
+
+        # 3. AI DOKUNUŞU (Çok Daha Kesin Talimatlarla)
+        test_ozeti = str(user.get("test_results", {})) if user else ""
+        
+        ai_prompt = f"""
+        Kullanıcı Bilgileri: {kisisel_bilgiler}. 
+        Kullanıcının GitHub'dan çekilen güncel projeleri (VARSA): 
+        {github_projeleri}
+        
+        GÖREVİN:
+        1. Bu kişi için profesyonel bir CV 'Özet/Hakkımda' yazısı yaz.
+        2. ÇIKTI DİLİ KESİNLİKLE {cv_dili} OLMALIDIR.
+        3. Eğitimi, yetenekleri ve dilleri düzenle.
+        4. ÇOK ÖNEMLİ (PROJELER KISMI): 'projeler' alanına ASLA parantezli, köşeli ayraçlı raw (ham) veri, array veya sözlük koyma! İK uzmanının okuyacağı şık bir düz metne (string) çevir. Her proje için şu formatı KESİNLİKLE KORU:
+        
+        📌 Proje: [Proje Adı] | Dil: [Kullanılan Dil]
+        - [Doğrudan projenin ne işe yaradığını ve değerini anlatan profesyonel açıklama]
+        
+        (Projeler arasına mutlaka boşluk bırakarak alt satıra geç)
+        
+        SADECE JSON FORMATINDA CEVAP VER:
+        {{ "hakkimda": "...", "egitim": "...", "deneyim": "...", "yetenekler": "...", "projeler": "...", "diller": "..." }}
+        """
+        
+        # 🚀 AZ ÖNCE EKSİK OLAN VE ÇÖKMEYE SEBEP OLAN KISIM BURASIYDI
+        response = openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            response_format={ "type": "json_object" },
+            messages=[{"role": "system", "content": "Sen profesyonel bir IK uzmanısın."},
+                      {"role": "user", "content": ai_prompt}]
+        )
+        
+        ai_sonuc = json.loads(response.choices[0].message.content)
+
+        # 4. HTML ŞABLONUNU DOLDURMA
+        template = template_env.get_template(f'{secilen_sablon}.html')
+        html_content = template.render(
+            ad=kisisel_bilgiler.get('ad', ''),
+            meslek=kisisel_bilgiler.get('meslek', ''),
+            email=kisisel_bilgiler.get('email', ''),
+            telefon=kisisel_bilgiler.get('telefon', ''),
+            linkedin=kisisel_bilgiler.get('linkedin', ''),
+            hakkimda=ai_sonuc.get('hakkimda', ''),
+            egitim=ai_sonuc.get('egitim', ''),
+            deneyim=ai_sonuc.get('deneyim', ''),
+            yetenekler=ai_sonuc.get('yetenekler', ''),
+            projeler=ai_sonuc.get('projeler', ''),
+            diller=ai_sonuc.get('diller', '')
+        )
+
+        # 5. PDF'E DÖNÜŞTÜRME
+        pdf_path = f"generated_cvs/cv_{uid}.pdf"
+        if not os.path.exists('generated_cvs'): os.makedirs('generated_cvs')
+        pdfkit.from_string(html_content, pdf_path, configuration=pdf_config)
+
+        # 6. JETON DÜŞME
+        users_collection.update_one(
+            {"uid": uid},
+            {"$inc": {"credits": -cv_maliyeti}}
+        )
+        print(f"🪙 JETON DÜŞÜLDÜ: {uid} | Harcanan: {cv_maliyeti} | Kalan: {mevcut_kredi - cv_maliyeti}")
+        
+        # 7. CV ARŞİVİNE KAYDET (Yeni kısım)
+        cv_kaydi = {
+            "uid": uid,
+            "dosya_adi": f"cv_{uid}.pdf",
+            "tarih": datetime.datetime.now(),
+            "sablon": secilen_sablon,
+            "dil": cv_dili,
+            "hedef_meslek": kisisel_bilgiler.get('meslek', '')
+        }
+        db.cv_arsivi.insert_one(cv_kaydi)
+
+
+        return send_file(pdf_path, as_attachment=True)
+
+    except Exception as e:
+        print("❌ CV Üretim Hatası:", e)
+        return jsonify({"error": str(e)}), 500
+    
+@app.route('/api/get_user', methods=['POST'])
+def get_user():
+    try:
+        data = request.json
+        uid = data.get('uid')
+        
+        user = users_collection.find_one({"uid": uid})
+        if user:
+            user["_id"] = str(user["_id"]) # ObjectId'yi metne çeviriyoruz (Çökme koruması)
+            return jsonify(user), 200
+        else:
+            return jsonify({"error": "Kullanıcı bulunamadı"}), 404
+            
+    except Exception as e:
+        print("❌ Kullanıcı Bilgisi Çekme Hatası:", e)
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/get_cv_history', methods=['POST'])
+def get_cv_history():
+    try:
+        data = request.json
+        uid = data.get('uid')
+        
+        # Kullanıcıya ait tüm CV kayıtlarını tarihe göre sondan başa getir
+        arsiv = list(db.cv_arsivi.find({"uid": uid}).sort("tarih", -1))
+        
+        for item in arsiv:
+            item["_id"] = str(item["_id"])
+            # Tarihi okunabilir formata çevir
+            item["tarih"] = item["tarih"].strftime("%d.%m.%Y %H:%M")
+            
+        return jsonify(arsiv), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+      
 # ==========================================
 # SUNUCUYU ÇALIŞTIRAN KOD
 # ==========================================

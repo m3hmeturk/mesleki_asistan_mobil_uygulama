@@ -2,34 +2,31 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+// SAYFALARIMIZ
 import 'login_page.dart';
 import 'register_page.dart';
 import 'chat_page.dart';
-import 'profile_page.dart'; // Profil sayfamızı buraya ekledik
+import 'profile_page.dart'; 
 import 'splash_screen.dart';
 import 'tests_page.dart';
-import 'roadmap_page.dart';
 import 'onboarding_page.dart';
-import 'package:provider/provider.dart';
-import 'roadmap_provider.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'cv_maker_page.dart'; // YENİ: Harita yerine CV sayfamızı ekledik!
 
 // Tüm uygulamanın dinleyeceği tema şalteri
 final ValueNotifier<ThemeMode> temaSalteri = ValueNotifier(ThemeMode.system);
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => RoadmapProvider()),
-      ],
-      child: const KariyerUygulamasi(), // Senin mevcut sınıfın
-    ),
-  );
+  
+  // ESKİ: RoadmapProvider silindiği için MultiProvider'ı kaldırdık, 
+  // uygulamayı doğrudan temiz bir şekilde başlatıyoruz.
+  runApp(const KariyerUygulamasi());
 }
 
 class KariyerUygulamasi extends StatelessWidget {
@@ -44,7 +41,6 @@ class KariyerUygulamasi extends StatelessWidget {
         return MaterialApp(
           debugShowCheckedModeBanner: false, 
           title: 'Mesleki Asistan',
-          // -- ESKİ TEMA KODLARIN BURADA DURMAYA DEVAM EDECEK --
           theme: ThemeData(
              useMaterial3: true, 
              colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple, brightness: Brightness.light),
@@ -54,9 +50,7 @@ class KariyerUygulamasi extends StatelessWidget {
              colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple, brightness: Brightness.dark),
              scaffoldBackgroundColor: const Color(0xFF121212), 
           ),
-          
-          themeMode: guncelTema, // ARTIK SİSTEM DEĞİL, BİZİM ŞALTERİ DİNLİYOR
-          
+          themeMode: guncelTema, 
           initialRoute: '/splash', 
           routes: {
             '/splash': (context) => const SplashScreen(),
@@ -81,32 +75,30 @@ class AnaEkran extends StatefulWidget {
 class _AnaEkranState extends State<AnaEkran> {
   int _secilenIndex = 1; 
 
+  // ALT MENÜDEKİ SAYFALARIN SIRALAMASI
   static final List<Widget> _sayfalar = [
-    const TestsPage(),     // ESKİ: const Center(...) yazısını sildik
+    const TestsPage(),     
     const ChatPage(), 
-    const RoadmapPage(),   // ESKİ: const Center(...) yazısını sildik
+    const CVMakerPage(),   // YENİ: RoadmapPage gitti, CVMakerPage geldi!
     const ProfilePage(), 
   ];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      
       appBar: AppBar(
         elevation: 0,
-        // backgroundColor: Colors.white, ---> BUNU SİL (Tema kendi ayarlasın)
         title: const Text(
           'Kariyer Asistanı', 
-          // DİKKAT: Aşağıdaki 'color: Colors.black' yazısını sildik!
           style: TextStyle(fontWeight: FontWeight.bold) 
         ),
         centerTitle: true,
       ),
       body: _sayfalar.elementAt(_secilenIndex),
       
-      // Şık Alt Menümüz (GNav) artık devrede!
+      // Şık Alt Menümüz (GNav)
       bottomNavigationBar: Container(
-        // color: Colors.white, ---> BUNU SİL, YERİNE ŞUNU YAZ:
-        color: Theme.of(context).scaffoldBackgroundColor, // Arka plana göre renk alır
+        color: Theme.of(context).scaffoldBackgroundColor, 
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 20),
           child: GNav(
@@ -120,8 +112,9 @@ class _AnaEkranState extends State<AnaEkran> {
             tabs: const [
               GButton(icon: Icons.assignment, text: 'Testler'),
               GButton(icon: Icons.smart_toy, text: 'Asistan'),
-              GButton(icon: Icons.map, text: 'Haritam'),
-              GButton(icon: Icons.person, text: 'Profilim'), // 4. Buton ikonu ve yazısı güncellendi
+              // YENİ: 3. Butonun ikonu ve yazısı CV üretime göre değişti
+              GButton(icon: Icons.picture_as_pdf, text: 'CV Üret'), 
+              GButton(icon: Icons.person, text: 'Profilim'), 
             ],
             selectedIndex: _secilenIndex,
             onTabChange: (index) {

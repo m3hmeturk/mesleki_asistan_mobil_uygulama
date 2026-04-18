@@ -30,7 +30,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
       // 2. Firebase başarılı oldu, şimdi verileri MongoDB'ye (Python'a) gönderelim!
       // DİKKAT: Senin bilgisayarının yerel IP adresi terminalindeki fotoğraftan gördüğüm kadarıyla 10.24.2.85
-      final url = Uri.parse('http://10.24.2.85:5000/api/kayit'); 
+      final url = Uri.parse('http://10.161.28.101:5000/api/kayit'); 
       
       final response = await http.post(
         url,

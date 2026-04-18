@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ ad }} - Teknik CV</title>
+    <style>
+        body { font-family: 'Courier New', Courier, monospace; color: #000; margin: 30px; line-height: 1.5; }
+        .header { border: 2px solid #000; padding: 20px; text-align: center; margin-bottom: 30px; background-color: #f8f9fa; }
+        .name { font-size: 32px; font-weight: bold; margin: 0; text-transform: uppercase; }
+        .title { font-size: 18px; margin-top: 5px; font-weight: bold; }
+        .contact { font-size: 14px; margin-top: 10px; }
+        .tech-box { border: 1px solid #000; padding: 15px; margin-bottom: 20px; }
+        .section-title { background-color: #000; color: #fff; display: inline-block; padding: 5px 10px; font-weight: bold; font-size: 16px; margin-bottom: 10px; margin-top: -30px; margin-left: 10px; text-transform: uppercase;}
+        .content { font-size: 14px; white-space: pre-line; margin-top: 10px; }
+        .about-text { font-size: 14px; text-align: justify; margin-bottom: 20px; font-family: 'Arial', sans-serif; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1 class="name">{{ ad }}</h1>
+        <div class="title">/// {{ meslek }} ///</div>
+        <div class="contact">E-Posta: {{ email }} | Tel: {{ telefon }} {% if linkedin %}| Ağ: {{ linkedin }}{% endif %}</div>
+    </div>
+
+    <div class="about-text"><strong>> PROFİL ÖZETİ:</strong> <br> {{ hakkimda }}</div>
+
+    <div class="tech-box">
+        <div class="section-title">EĞİTİM & AKADEMİK</div>
+        <div class="content">{{ egitim }}</div>
+    </div>
+
+    <div class="tech-box">
+        <div class="section-title">AR-GE & İŞ DENEYİMİ</div>
+        <div class="content">{{ deneyim }}</div>
+    </div>
+
+    <div class="tech-box">
+        <div class="section-title">YAZILIM & DONANIM YETENEKLERİ</div>
+        <div class="content">{{ yetenekler }}</div>
+    </div>
+
+    <div class="tech-box">
+        <div class="section-title">PROJELER & YARIŞMALAR</div>
+        <div class="content">{{ projeler }}</div>
+    </div>
+
+    <div class="tech-box">
+        <div class="section-title">YABANCI DİL</div>
+        <div class="content">{{ diller }}</div>
+    </div>
+</body>
+</html>
