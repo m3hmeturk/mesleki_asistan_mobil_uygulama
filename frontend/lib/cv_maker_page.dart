@@ -93,7 +93,7 @@ class _CVMakerPageState extends State<CVMakerPage> {
       _isLoading = true;
       _loadingTextIndex = 0;
     });
-    
+
     _loadingTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
       if (mounted) {
         setState(() {
@@ -106,11 +106,16 @@ class _CVMakerPageState extends State<CVMakerPage> {
 
     final url = Uri.parse('http://10.161.28.101:5000/api/generate_cv');
 
+    // 🚀 1. YENİ: Benzersiz Dosya Adını Oluşturuyoruz (Timestamp ile)
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final olusturulanDosyaAdi = "CV_$timestamp.pdf";
+
     final Map<String, dynamic> requestBody = {
       'uid': FirebaseAuth.instance.currentUser?.uid ?? 'anonim_kullanici',
       'sablon_id': _secilenSablon,
       'cv_dili': _cvDili,
-      'github_username': _githubController.text.trim(), // 🚀 API'ye GitHub adını gönderiyoruz
+      'github_username': _githubController.text.trim(),
+      'dosya_adi': olusturulanDosyaAdi, // 🚀 2. YENİ: Python'a bu ismi gönderiyoruz!
       'bilgiler': {
         'ad': _adController.text,
         'meslek': _meslekController.text,
@@ -132,21 +137,18 @@ class _CVMakerPageState extends State<CVMakerPage> {
         body: json.encode(requestBody),
       );
 
-      // 🚀 YENİ: Eğer bakiye yetersizse (402 Hatası)
       if (response.statusCode == 402) {
         final errorData = json.decode(response.body);
         _showBakiyeYetersizDialog(errorData['required'], errorData['current']);
-        return; // İşlemi durdur
+        return; 
       }
 
       if (response.statusCode == 200) {
         final bytes = response.bodyBytes;
         final dir = await getApplicationDocumentsDirectory();
         
-        // 🚀 İSMİ SABİTLEYELİM: Veritabanındaki isimle aynı yapıyoruz
-        final uid = FirebaseAuth.instance.currentUser?.uid ?? 'anonim_kullanici';
-        final fileName = 'cv_$uid.pdf'; 
-        final file = File('${dir.path}/$fileName');
+        // 🚀 3. YENİ: Telefona da Python'a gönderdiğimiz benzersiz isimle kaydediyoruz!
+        final file = File('${dir.path}/$olusturulanDosyaAdi');
 
         await file.writeAsBytes(bytes);
         
@@ -156,8 +158,6 @@ class _CVMakerPageState extends State<CVMakerPage> {
         );
 
         OpenFilex.open(file.path);
-        
-        // 🚀 YENİ: Üretim başarılı oldu, bakiyeden para düştü, ekrandaki cüzdanı güncelle!
         _bakiyeSorgula(); 
 
       } else {
@@ -174,7 +174,6 @@ class _CVMakerPageState extends State<CVMakerPage> {
       });
     }
   }
-
   // 🚀 YENİ: Bakiye Yetersiz Uyarı Penceresi
   void _showBakiyeYetersizDialog(int gereken, int mevcut) {
     showDialog(

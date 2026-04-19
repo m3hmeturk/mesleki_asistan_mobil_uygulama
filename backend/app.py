@@ -4,12 +4,13 @@ import datetime
 import json
 import pdfkit
 import requests
-from flask import Flask, jsonify, request, send_file
+from flask import Flask, jsonify, request, send_file, render_template
 from flask_cors import CORS
 from openai import OpenAI  # OpenAI kütüphanesini kullanıyoruz
 from dotenv import load_dotenv
 from pymongo import MongoClient
 from jinja2 import Environment, FileSystemLoader
+from bson.objectid import ObjectId
 
 # .env dosyasındaki gizli şifrelerimizi yüklüyoruz
 load_dotenv()
@@ -362,20 +363,15 @@ def generate_cv():
                         dil = repo.get('language') or 'Çeşitli'
                         aciklama = repo.get('description') or ''
 
-                        # 🚀 YENİ: README dosyasını çekme operasyonu!
+                        # README dosyasını çekme operasyonu!
                         readme_icerik = ""
                         readme_url = f"https://api.github.com/repos/{github_username}/{isim}/readme"
-                        # Sadece ham (raw) metni almak için özel bir başlık gönderiyoruz
                         headers = {"Accept": "application/vnd.github.v3.raw"} 
                         readme_response = requests.get(readme_url, headers=headers)
                         
                         if readme_response.status_code == 200:
-                            # AI'ın kafası karışmasın diye README'nin sadece ilk 600 karakterini alıyoruz (Özet için fazlasıyla yeterli)
                             readme_icerik = readme_response.text[:600].replace('\n', ' ') 
                             
-                        # Zekice Karar Mekanizması:
-                        # README varsa onu kullan, yoksa kısa açıklamayı kullan. 
-                        # İkisi de yoksa rezil olmamak için dilden yola çıkarak teknik bir cümle uydur.
                         detay = readme_icerik if readme_icerik else aciklama
                         if not detay or detay.isspace():
                             detay = f"{dil} programlama dili mimarisi kullanılarak geliştirilmiş teknik yazılım projesi ve kod deposu."
@@ -389,7 +385,7 @@ def generate_cv():
             except Exception as e:
                 print("❌ GitHub Çekme Hatası:", e)
 
-        # 3. AI DOKUNUŞU (Çok Daha Kesin Talimatlarla)
+        # 3. AI DOKUNUŞU
         test_ozeti = str(user.get("test_results", {})) if user else ""
         
         ai_prompt = f"""
@@ -412,7 +408,6 @@ def generate_cv():
         {{ "hakkimda": "...", "egitim": "...", "deneyim": "...", "yetenekler": "...", "projeler": "...", "diller": "..." }}
         """
         
-        # 🚀 AZ ÖNCE EKSİK OLAN VE ÇÖKMEYE SEBEP OLAN KISIM BURASIYDI
         response = openai_client.chat.completions.create(
             model="gpt-4o-mini",
             response_format={ "type": "json_object" },
@@ -422,9 +417,17 @@ def generate_cv():
         
         ai_sonuc = json.loads(response.choices[0].message.content)
 
-        # 4. HTML ŞABLONUNU DOLDURMA
-        template = template_env.get_template(f'{secilen_sablon}.html')
-        html_content = template.render(
+        # Flutter'dan gelen özel dosya adını alıyoruz (Aşağıdaydı, yukarı taşıdık)
+        gelen_dosya_adi = data.get('dosya_adi', f"cv_{uid}.pdf")
+
+        # ==========================================
+        # 🚀 4. HTML ŞABLONUNU DOLDURMA (GÜNCELLENDİ)
+        # ==========================================
+        # template_env yerine Flask'ın kendi render_template fonksiyonunu kullanıyoruz 
+        # (Çünkü CSS çekmek için kullandığımız url_for sadece bu şekilde çalışır)
+        from flask import render_template
+        html_content = render_template(
+            f'{secilen_sablon}.html',
             ad=kisisel_bilgiler.get('ad', ''),
             meslek=kisisel_bilgiler.get('meslek', ''),
             email=kisisel_bilgiler.get('email', ''),
@@ -438,10 +441,25 @@ def generate_cv():
             diller=ai_sonuc.get('diller', '')
         )
 
-        # 5. PDF'E DÖNÜŞTÜRME
-        pdf_path = f"generated_cvs/cv_{uid}.pdf"
+        # ==========================================
+        # 🚀 5. PDF'E DÖNÜŞTÜRME (GÜNCELLENDİ)
+        # ==========================================
+        # PDF Motoruna "static" klasörüne (CSS'e) erişim izni veriyoruz
+        secenekler = {
+            'enable-local-file-access': "", 
+            'encoding': "UTF-8",
+            'margin-top': '0mm',
+            'margin-right': '0mm',
+            'margin-bottom': '0mm',
+            'margin-left': '0mm'
+        }
+
+        # Önceden hepsi cv_uid.pdf olarak kaydolup birbirini eziyordu. Artık benzersiz adla kaydolacak.
+        pdf_path = f"generated_cvs/{gelen_dosya_adi}" 
         if not os.path.exists('generated_cvs'): os.makedirs('generated_cvs')
-        pdfkit.from_string(html_content, pdf_path, configuration=pdf_config)
+        
+        # 'options=secenekler' parametresi eklendi
+        pdfkit.from_string(html_content, pdf_path, configuration=pdf_config, options=secenekler)
 
         # 6. JETON DÜŞME
         users_collection.update_one(
@@ -450,17 +468,16 @@ def generate_cv():
         )
         print(f"🪙 JETON DÜŞÜLDÜ: {uid} | Harcanan: {cv_maliyeti} | Kalan: {mevcut_kredi - cv_maliyeti}")
         
-        # 7. CV ARŞİVİNE KAYDET (Yeni kısım)
+        # 7. CV ARŞİVİNE KAYDET
         cv_kaydi = {
             "uid": uid,
-            "dosya_adi": f"cv_{uid}.pdf",
+            "dosya_adi": gelen_dosya_adi, 
             "tarih": datetime.datetime.now(),
             "sablon": secilen_sablon,
             "dil": cv_dili,
             "hedef_meslek": kisisel_bilgiler.get('meslek', '')
         }
         db.cv_arsivi.insert_one(cv_kaydi)
-
 
         return send_file(pdf_path, as_attachment=True)
 
@@ -503,7 +520,26 @@ def get_cv_history():
         return jsonify(arsiv), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-      
+
+@app.route('/api/delete_cv', methods=['POST'])
+def delete_cv():
+    try:
+        data = request.json
+        uid = data.get('uid')
+        cv_id = data.get('cv_id') # MongoDB'nin verdiği benzersiz ID
+        
+        # Sadece ilgili kullanıcıya ait olan kaydı siliyoruz (Güvenlik için)
+        result = db.cv_arsivi.delete_one({"_id": ObjectId(cv_id), "uid": uid})
+        
+        if result.deleted_count > 0:
+            return jsonify({"message": "CV başarıyla silindi"}), 200
+        else:
+            return jsonify({"error": "Kayıt bulunamadı"}), 404
+            
+    except Exception as e:
+        print("❌ CV Silme Hatası:", e)
+        return jsonify({"error": str(e)}), 500
+
 # ==========================================
 # SUNUCUYU ÇALIŞTIRAN KOD
 # ==========================================

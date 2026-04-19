@@ -1,0 +1,60 @@
+/* PDF Uyumlu Genel Ayarlar */
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; color: #333; line-height: 1.5; background-color: white; }
+.cv-wrapper { width: 100%; max-width: 210mm; min-height: 297mm; display: table; margin: 0 auto; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
+
+/* --- ÜST LACİVERT BAŞLIK (WİDE) --- */
+.cv-header { display: table-header-group; background-color: #2F3542; color: white; padding: 40px; text-align: center; width: 100%; box-sizing: border-box; }
+.cv-header h1 { margin: 0; font-size: 36px; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; }
+.cv-header h2 { margin: 10px 0 0 0; font-size: 16px; font-weight: normal; letter-spacing: 1px; color: #A4B0BE; text-transform: uppercase; }
+
+/* --- İKİ KOLONLU DÜZEN --- */
+.cv-body { display: table-row-group; width: 100%; }
+
+/* Sol Kolon (Gri Bant) */
+.sidebar { display: table-cell; width: 35%; background-color: #E6E9ED; vertical-align: top; padding: 30px; box-sizing: border-box; }
+
+/* Sağ Kolon (Beyaz Alan) */
+.main-content { display: table-cell; width: 65%; background-color: #FFFFFF; vertical-align: top; padding: 30px; box-sizing: border-box; }
+
+/* --- SOL KOLON (SİDEBAR) STİLLERİ --- */
+.profile-photo-container { text-align: center; margin-bottom: 30px; }
+.profile-photo { width: 160px; height: 160px; border-radius: 50%; border: 5px solid white; object-fit: cover; background-color: #fff; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+
+.section-sidebar { margin-bottom: 25px; }
+.section-sidebar h3 { font-size: 16px; color: #2F3542; border-bottom: 2px solid #CED6E0; padding-bottom: 8px; margin-top: 0; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 15px; }
+.sidebar-list { list-style-type: none; padding: 0; margin: 0; font-size: 13px; color: #2F3542; line-height: 2; }
+.sidebar-list li { display: flex; align-items: center; margin-bottom: 5px; }
+.icon { margin-right: 10px; font-size: 14px; }
+
+/* Eğitim kısmını resimdeki gibi stilize et */
+.edu-block { margin-bottom: 15px; font-size: 13px; }
+.edu-title { font-weight: bold; color: #2F3542; }
+.edu-details { color: #57606F; font-style: italic; font-size: 12px; }
+.edu-dates { color: #A4B0BE; font-size: 11px; }
+
+/* --- SAĞ KOLON (MAİN CONTENT) STİLLERİ --- */
+.section-main { margin-bottom: 30px; position: relative; }
+/* Timeline etkisi için çizgili başlıklar */
+.section-main h3 { font-size: 20px; color: #2F3542; border-bottom: 2px solid #2F3542; padding-bottom: 10px; margin-top: 0; text-transform: uppercase; display: flex; align-items: center; margin-bottom: 20px; }
+.section-main h3::before { content: ""; display: block; width: 15px; height: 15px; background-color: #2F3542; border-radius: 50%; margin-right: 15px; border: 3px solid #CED6E0; }
+
+/* Timeline çizgisi */
+.timeline-line { position: absolute; left: 8px; top: 40px; bottom: 0; width: 2px; background-color: #CED6E0; z-index: -1; }
+
+.text-content { font-size: 13px; color: #57606F; text-align: justify; margin-left: 30px; }
+
+/* Deneyim bloğunu stilize et */
+.exp-block { margin-bottom: 20px; position: relative; padding-left: 30px; }
+.exp-block::before { content: ""; position: absolute; left: 8px; top: 5px; width: 10px; height: 10px; background-color: #FFFFFF; border: 2px solid #CED6E0; border-radius: 50%; }
+
+.company-title { font-weight: bold; color: #2F3542; font-size: 14px; }
+.job-title { font-style: italic; color: #747D8C; font-size: 13px; margin-bottom: 5px; }
+.dates-block { color: #A4B0BE; font-size: 12px; position: absolute; right: 0; top: 0; }
+
+.bullet-list { padding-left: 20px; margin: 5px 0 0 0; font-size: 12px; color: #57606F; line-height: 1.8; }
+.bullet-list li::before { content: "•"; color: #A4B0BE; margin-right: 8px; }
+
+/* Yetenekler ve Projeler için liste stilleri */
+.skill-list { list-style-type: none; padding: 0; margin: 0; font-size: 12px; color: #57606F; line-height: 1.8; margin-left: 30px; }
+.skill-list li { margin-bottom: 8px; }
+.skill-list li strong { color: #2F3542; }
