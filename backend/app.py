@@ -4,6 +4,7 @@ import datetime
 import json
 import pdfkit
 import requests
+import base64
 from flask import Flask, jsonify, request, send_file, render_template
 from flask_cors import CORS
 from openai import OpenAI  # OpenAI kütüphanesini kullanıyoruz
@@ -324,14 +325,30 @@ def generate_roadmap():
 template_env = Environment(loader=FileSystemLoader('templates'))
 
 @app.route('/api/generate_cv', methods=['POST'])
+@app.route('/api/generate_cv', methods=['POST'])
 def generate_cv():
     try:
-        data = request.json
-        uid = data.get('uid')
-        kisisel_bilgiler = data.get('bilgiler')
-        secilen_sablon = data.get('sablon_id', 'klasik')
-        cv_dili = data.get('cv_dili', 'Türkçe')
-        github_username = data.get('github_username', '').strip() # 🚀 YENİ: GitHub Kullanıcı Adı
+        # ==========================================
+        # 🚀 1. DEĞİŞİKLİK: VERİLERİ JSON YERİNE FORM OLARAK ALIYORUZ
+        # ==========================================
+        uid = request.form.get('uid')
+        secilen_sablon = request.form.get('sablon_id', 'klasik')
+        cv_dili = request.form.get('cv_dili', 'Türkçe')
+        github_username = request.form.get('github_username', '').strip()
+
+        # Flutter'dan form alanları olarak gelen bilgileri senin sözlüğüne paketliyoruz
+        kisisel_bilgiler = {
+            'ad': request.form.get('ad', ''),
+            'meslek': request.form.get('meslek', ''),
+            'email': request.form.get('email', ''),
+            'telefon': request.form.get('telefon', ''),
+            'linkedin': request.form.get('linkedin', ''),
+            'egitim': request.form.get('egitim', ''),
+            'deneyim': request.form.get('deneyim', ''),
+            'yetenekler': request.form.get('yetenekler', ''),
+            'projeler': request.form.get('projeler', ''),
+            'diller': request.form.get('diller', '')
+        }
 
         # 1. AKILLI FİYATLANDIRMA
         cv_maliyeti = 30 if secilen_sablon in ['modern', 'teknik'] else 2
@@ -388,8 +405,11 @@ def generate_cv():
         # 3. AI DOKUNUŞU
         test_ozeti = str(user.get("test_results", {})) if user else ""
         
+        # Yapay zekaya gidecek bilgilerin kopyası (Artık içinde Base64 foto yok, sadece form verileri var)
+        ai_icin_bilgiler = kisisel_bilgiler.copy()
+        
         ai_prompt = f"""
-        Kullanıcı Bilgileri: {kisisel_bilgiler}. 
+        Kullanıcı Bilgileri: {ai_icin_bilgiler}.
         Kullanıcının GitHub'dan çekilen güncel projeleri (VARSA): 
         {github_projeleri}
         
@@ -417,17 +437,50 @@ def generate_cv():
         
         ai_sonuc = json.loads(response.choices[0].message.content)
 
-        # Flutter'dan gelen özel dosya adını alıyoruz (Aşağıdaydı, yukarı taşıdık)
-        gelen_dosya_adi = data.get('dosya_adi', f"cv_{uid}.pdf")
+        # Flutter'dan gelen özel dosya adını alıyoruz (request.form'dan)
+        gelen_dosya_adi = request.form.get('dosya_adi', f"cv_{uid}.pdf")
 
         # ==========================================
-        # 🚀 4. HTML ŞABLONUNU DOLDURMA (GÜNCELLENDİ)
+        # 🚀 4. HTML ŞABLONUNU DOLDURMA
         # ==========================================
-        # template_env yerine Flask'ın kendi render_template fonksiyonunu kullanıyoruz 
-        # (Çünkü CSS çekmek için kullandığımız url_for sadece bu şekilde çalışır)
         from flask import render_template
+        import os 
+        
+        # 1. Hangi şablon seçildiyse onun CSS dosyasının yolunu bul
+        css_yolu = f"static/css/{secilen_sablon}_style.css"
+        css_kodlari = ""
+        
+        # 2. Eğer öyle bir CSS dosyası varsa (örneğin modern_style.css), içindeki kodları oku
+        if os.path.exists(css_yolu):
+            with open(css_yolu, 'r', encoding='utf-8') as f:
+                css_kodlari = f.read()
+
+        # ==========================================
+        # 🚀 2. DEĞİŞİKLİK: FOTOĞRAFI DOSYA OLARAK KAYDETME VE GÖMME
+        # ==========================================
+        import base64 # Bu en üstte yoksa diye buraya da ekleyebiliriz sorun olmaz
+        pdf_uyumlu_yol = ""
+        
+        if 'profil_foto' in request.files:
+            foto = request.files['profil_foto']
+            if foto.filename != '':
+                # 1. Fotoğrafı kaliteli şekilde kaydet
+                kayit_yolu = os.path.join('static', f'profil_{uid}.jpg')
+                foto.save(kayit_yolu)
+                
+                # 2. 🚀 TRUVA ATI: Kaydedilen bu kaliteli dosyayı Python'a okutuyoruz
+                with open(kayit_yolu, "rb") as f:
+                    resim_verisi = base64.b64encode(f.read()).decode('utf-8')
+                
+                # 3. PDF motorunun asla reddedemeyeceği "Gömülü Veri" formatına çeviriyoruz
+                pdf_uyumlu_yol = f"data:image/jpeg;base64,{resim_verisi}"
+                print("📸 TRUVA ATI BAŞARILI: Resim HTML'in içine data olarak gömüldü!")
+
+        # 3. HTML'e hem bilgileri, hem okuduğumuz CSS kodlarını, hem de KALİTELİ FOTO YOLUNU gönder
         html_content = render_template(
             f'{secilen_sablon}.html',
+            css_kodlari=css_kodlari, 
+            profil_foto=pdf_uyumlu_yol,  # 🚀 BURASI DEĞİŞTİ!
             ad=kisisel_bilgiler.get('ad', ''),
             meslek=kisisel_bilgiler.get('meslek', ''),
             email=kisisel_bilgiler.get('email', ''),
@@ -442,9 +495,8 @@ def generate_cv():
         )
 
         # ==========================================
-        # 🚀 5. PDF'E DÖNÜŞTÜRME (GÜNCELLENDİ)
+        # 🚀 5. PDF'E DÖNÜŞTÜRME
         # ==========================================
-        # PDF Motoruna "static" klasörüne (CSS'e) erişim izni veriyoruz
         secenekler = {
             'enable-local-file-access': "", 
             'encoding': "UTF-8",
@@ -454,11 +506,9 @@ def generate_cv():
             'margin-left': '0mm'
         }
 
-        # Önceden hepsi cv_uid.pdf olarak kaydolup birbirini eziyordu. Artık benzersiz adla kaydolacak.
         pdf_path = f"generated_cvs/{gelen_dosya_adi}" 
         if not os.path.exists('generated_cvs'): os.makedirs('generated_cvs')
         
-        # 'options=secenekler' parametresi eklendi
         pdfkit.from_string(html_content, pdf_path, configuration=pdf_config, options=secenekler)
 
         # 6. JETON DÜŞME

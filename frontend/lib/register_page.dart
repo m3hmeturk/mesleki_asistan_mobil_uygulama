@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'login_page.dart';
+import 'api_config.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -30,7 +31,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
       // 2. Firebase başarılı oldu, şimdi verileri MongoDB'ye (Python'a) gönderelim!
       // DİKKAT: Senin bilgisayarının yerel IP adresi terminalindeki fotoğraftan gördüğüm kadarıyla 10.24.2.85
-      final url = Uri.parse('http://10.161.28.101:5000/api/kayit'); 
+      final url = Uri.parse('${ApiConfig.baseUrl}/api/kayit'); 
       
       final response = await http.post(
         url,

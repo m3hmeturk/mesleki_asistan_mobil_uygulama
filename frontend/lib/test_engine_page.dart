@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
+import 'api_config.dart';
 
 class TestEnginePage extends StatefulWidget {
   final String testTitle;
@@ -136,7 +137,7 @@ class _TestEnginePageState extends State<TestEnginePage> {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
         final response = await http.post(
-          Uri.parse('http://10.161.28.101:5000/api/save_test'), // DİKKAT: Kendi yerel IP adresini kontrol et!
+          Uri.parse('${ApiConfig.baseUrl}/api/save_test'), // DİKKAT: Kendi yerel IP adresini kontrol et!
           headers: {"Content-Type": "application/json; charset=utf-8"},
           body: jsonEncode({
             "uid": user.uid,

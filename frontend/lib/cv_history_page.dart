@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:open_filex/open_filex.dart';
+import 'api_config.dart';
 
 class CVHistoryPage extends StatefulWidget {
   const CVHistoryPage({super.key});
@@ -25,7 +26,7 @@ class _CVHistoryPageState extends State<CVHistoryPage> {
 
   // 1. API'den geçmişi çekme
   Future<void> _fetchHistory() async {
-    final url = Uri.parse('http://10.161.28.101:5000/api/get_cv_history');
+    final url = Uri.parse('${ApiConfig.baseUrl}/api/get_cv_history');
     try {
       final response = await http.post(
         url,
@@ -80,7 +81,7 @@ class _CVHistoryPageState extends State<CVHistoryPage> {
 
   // 🚀 YENİ: Silme İşlemini Yapan Fonksiyon
   Future<void> _deleteCV(String cvId, int index) async {
-    final url = Uri.parse('http://10.161.28.101:5000/api/delete_cv');
+    final url = Uri.parse('${ApiConfig.baseUrl}/api/delete_cv');
     try {
       final response = await http.post(
         url,

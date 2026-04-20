@@ -7,6 +7,13 @@ import 'package:open_filex/open_filex.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:async'; // 🚀 Timer için gerekli
 import 'cv_history_page.dart';
+import 'api_config.dart';
+import 'package:image_picker/image_picker.dart';
+
+
+File? _secilenFoto;
+String? _base64Foto;
+
 
 class CVMakerPage extends StatefulWidget {
   const CVMakerPage({super.key});
@@ -62,10 +69,28 @@ class _CVMakerPageState extends State<CVMakerPage> {
     super.initState();
     _bakiyeSorgula(); // 🚀 Sayfa açılır açılmaz bakiyeyi Python'dan çek
   }
-
+  Future<void> _fotoSec() async {
+    final picker = ImagePicker();
+    
+    // 🚀 ÇÖZÜM BURADA: Fotoğrafın enini ve boyunu maksimum 400 piksel yapıyoruz.
+    // Böylece 1.5 milyon karakter olan metin, 20-30 bin karaktere düşecek!
+    final pickedFile = await picker.pickImage(
+      source: ImageSource.gallery, 
+      imageQuality: 70, // Kaliteyi biraz artırabiliriz boyut zaten küçülecek
+      maxWidth: 400,    // Maksimum genişlik
+      maxHeight: 400,   // Maksimum yükseklik
+    ); 
+    
+    if (pickedFile != null) {
+      setState(() {
+        _secilenFoto = File(pickedFile.path);
+      });
+      
+    }
+  }
   // 🚀 YENİ: Veritabanından Güncel Bakiyeyi Çeken Fonksiyon
   Future<void> _bakiyeSorgula() async {
-    final url = Uri.parse('http://10.161.28.101:5000/api/get_user');
+    final url = Uri.parse('${ApiConfig.baseUrl}/api/get_user');
     try {
       final response = await http.post(
         url,
@@ -104,52 +129,63 @@ class _CVMakerPageState extends State<CVMakerPage> {
       }
     });
 
-    final url = Uri.parse('http://10.161.28.101:5000/api/generate_cv');
+    final url = Uri.parse('${ApiConfig.baseUrl}/api/generate_cv');
 
-    // 🚀 1. YENİ: Benzersiz Dosya Adını Oluşturuyoruz (Timestamp ile)
+    // Benzersiz Dosya Adını Oluşturuyoruz
     final timestamp = DateTime.now().millisecondsSinceEpoch;
     final olusturulanDosyaAdi = "CV_$timestamp.pdf";
 
-    final Map<String, dynamic> requestBody = {
-      'uid': FirebaseAuth.instance.currentUser?.uid ?? 'anonim_kullanici',
-      'sablon_id': _secilenSablon,
-      'cv_dili': _cvDili,
-      'github_username': _githubController.text.trim(),
-      'dosya_adi': olusturulanDosyaAdi, // 🚀 2. YENİ: Python'a bu ismi gönderiyoruz!
-      'bilgiler': {
-        'ad': _adController.text,
-        'meslek': _meslekController.text,
-        'email': _emailController.text,
-        'telefon': _telefonController.text,
-        'linkedin': _linkedinController.text,
-        'egitim': _egitimController.text,
-        'deneyim': _deneyimController.text,
-        'yetenekler': _yeteneklerController.text,
-        'projeler': _projelerController.text,
-        'diller': _dillerController.text,
-      }
-    };
-
     try {
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode(requestBody),
-      );
+      // 🚀 1. YENİ: JSON yerine Multipart (Çok Parçalı Form) İstek oluşturuyoruz
+      var request = http.MultipartRequest('POST', url);
 
+      // 🚀 2. Normal Metin Verilerini Ekliyoruz (request.fields)
+      request.fields['uid'] = FirebaseAuth.instance.currentUser?.uid ?? 'anonim_kullanici';
+      request.fields['sablon_id'] = _secilenSablon;
+      request.fields['cv_dili'] = _cvDili;
+      request.fields['github_username'] = _githubController.text.trim();
+      request.fields['dosya_adi'] = olusturulanDosyaAdi;
+      
+      // Bilgiler kısmını artık iç içe değil, doğrudan ekliyoruz
+      request.fields['ad'] = _adController.text;
+      request.fields['meslek'] = _meslekController.text;
+      request.fields['email'] = _emailController.text;
+      request.fields['telefon'] = _telefonController.text;
+      request.fields['linkedin'] = _linkedinController.text;
+      request.fields['egitim'] = _egitimController.text;
+      request.fields['deneyim'] = _deneyimController.text;
+      request.fields['yetenekler'] = _yeteneklerController.text;
+      request.fields['projeler'] = _projelerController.text;
+      request.fields['diller'] = _dillerController.text;
+
+      // 🚀 3. FOTOĞRAF DOSYASINI EKLİYORUZ (request.files)
+      if (_secilenFoto != null) {
+        request.files.add(await http.MultipartFile.fromPath(
+          'profil_foto', // Python bu ismi bekliyor
+          _secilenFoto!.path, // Doğrudan dosyanın telefondaki yolunu veriyoruz
+        ));
+        print("📸 AJAN 1 (FLUTTER): Gerçek fotoğraf dosyası eklendi -> ${_secilenFoto!.path}");
+      } else {
+        print("📸 AJAN 1 (FLUTTER): Fotoğraf seçilmedi, resimsiz devam ediliyor.");
+      }
+
+      // 🚀 4. İsteği gönder ve yanıtı bekle
+      var streamedResponse = await request.send();
+      var response = await http.Response.fromStream(streamedResponse);
+
+      // Bakiye yetersiz durumu (Senin yazdığın kod aynen duruyor)
       if (response.statusCode == 402) {
         final errorData = json.decode(response.body);
         _showBakiyeYetersizDialog(errorData['required'], errorData['current']);
         return; 
       }
 
+      // Başarılı durum (Senin yazdığın dosya kaydetme ve açma aynen duruyor)
       if (response.statusCode == 200) {
         final bytes = response.bodyBytes;
         final dir = await getApplicationDocumentsDirectory();
         
-        // 🚀 3. YENİ: Telefona da Python'a gönderdiğimiz benzersiz isimle kaydediyoruz!
         final file = File('${dir.path}/$olusturulanDosyaAdi');
-
         await file.writeAsBytes(bytes);
         
         ScaffoldMessenger.of(context).clearSnackBars();
@@ -349,6 +385,22 @@ class _CVMakerPageState extends State<CVMakerPage> {
                   title: const Text('Kişisel Bilgiler', style: TextStyle(fontWeight: FontWeight.bold)),
                   content: Column(
                     children: [
+                      // 📸 FOTOĞRAF SEÇME KUTUSU BURAYA GELDİ
+                      GestureDetector(
+                        onTap: _fotoSec,
+                        child: Center(
+                          child: CircleAvatar(
+                            radius: 50, // Stepper içinde çok büyük durmaması için 50 yaptık
+                            backgroundColor: Colors.grey.shade300,
+                            backgroundImage: _secilenFoto != null ? FileImage(_secilenFoto!) : null,
+                            child: _secilenFoto == null 
+                                ? const Icon(Icons.add_a_photo, size: 35, color: Colors.white)
+                                : null,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 15), // Fotoğraf ile form arasına boşluk
+
                       TextField(controller: _adController, decoration: const InputDecoration(labelText: 'Ad Soyad', prefixIcon: Icon(Icons.person))),
                       TextField(controller: _meslekController, decoration: const InputDecoration(labelText: 'Hedef Meslek', prefixIcon: Icon(Icons.work))),
                       TextField(controller: _emailController, decoration: const InputDecoration(labelText: 'E-Posta', prefixIcon: Icon(Icons.email))),

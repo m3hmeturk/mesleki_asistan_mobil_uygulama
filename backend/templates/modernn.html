@@ -5,10 +5,19 @@
     <title>{{ ad }} - Modern CV</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #2c3e50; margin: 0; padding: 0; background-color: #fcfcfc; }
-        .header { background-color: #2c3e50; color: white; padding: 40px; text-align: left; }
+        
+        /* 🚀 PDF UYUMLU TABLO BAŞLIĞI */
+        .header-table { width: 100%; background-color: #2c3e50; padding: 40px; color: white; border-collapse: collapse; }
+        .header-td-left { vertical-align: middle; }
+        .header-td-right { vertical-align: middle; text-align: right; width: 140px; }
+        
         .name { font-size: 42px; font-weight: 300; margin: 0; letter-spacing: 2px; }
         .title { font-size: 20px; color: #1abc9c; margin-top: 10px; font-weight: bold; text-transform: uppercase; }
-        .contact { background-color: #1abc9c; color: white; padding: 15px 40px; font-size: 14px; display: flex; justify-content: space-between; }
+        
+        /* FOTOĞRAF STİLİ */
+        .profile-img { width: 120px; height: 120px; border-radius: 50%; border: 3px solid #1abc9c; }
+
+        .contact { background-color: #1abc9c; color: white; padding: 15px 40px; font-size: 14px; text-align: center; }
         .container { padding: 40px; }
         .section { margin-bottom: 30px; }
         .section-title { font-size: 18px; font-weight: bold; color: #2c3e50; text-transform: uppercase; border-bottom: 2px solid #1abc9c; padding-bottom: 5px; margin-bottom: 15px; display: inline-block;}
@@ -17,17 +26,29 @@
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1 class="name">{{ ad }}</h1>
-        <div class="title">{{ meslek }}</div>
-    </div>
+    <table class="header-table">
+        <tr>
+            <td class="header-td-left">
+                <h1 class="name">{{ ad }}</h1>
+                <div class="title">{{ meslek }}</div>
+            </td>
+            <td class="header-td-right">
+                {% if profil_foto %}
+                    <img src="{{ profil_foto }}" alt="Profil" class="profile-img">
+                {% else %}
+                    <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Profil" class="profile-img">
+                {% endif %}
+            </td>
+        </tr>
+    </table>
+
     <div class="contact">
         {{ email }} &nbsp;|&nbsp; {{ telefon }} {% if linkedin %} &nbsp;|&nbsp; {{ linkedin }}{% endif %}
     </div>
 
     <div class="container">
         <div class="about-text">{{ hakkimda }}</div>
-
+        
         <div class="section">
             <div class="section-title">Eğitim</div>
             <div class="content">{{ egitim }}</div>
