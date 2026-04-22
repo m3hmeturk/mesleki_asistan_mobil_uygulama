@@ -9,10 +9,9 @@ import 'dart:async'; // 🚀 Timer için gerekli
 import 'cv_history_page.dart';
 import 'api_config.dart';
 import 'package:image_picker/image_picker.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
 
 File? _secilenFoto;
-String? _base64Foto;
 
 
 class CVMakerPage extends StatefulWidget {
@@ -29,6 +28,40 @@ class _CVMakerPageState extends State<CVMakerPage> {
   // 🚀 YENİ: Canlı Cüzdan Değişkenleri
   int _jetonBakiye = 0;
   bool _isBakiyeLoading = true;
+
+  // 💾 Hafızaya Kaydetme
+Future<void> _taslakKaydet() async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setString('ad', _adController.text);
+  await prefs.setString('meslek', _meslekController.text);
+  await prefs.setString('email', _emailController.text);
+  await prefs.setString('telefon', _telefonController.text);
+  await prefs.setString('linkedin', _linkedinController.text);
+  await prefs.setString('egitim', _egitimController.text);
+  await prefs.setString('deneyim', _deneyimController.text);
+  await prefs.setString('yetenekler', _yeteneklerController.text);
+  await prefs.setString('projeler', _projelerController.text);
+  await prefs.setString('diller', _dillerController.text);
+  await prefs.setString('secilen_sablon', _secilenSablon);
+}
+
+// 📂 Hafızadan Geri Yükleme
+Future<void> _taslakYukle() async {
+  final prefs = await SharedPreferences.getInstance();
+  setState(() {
+    _adController.text = prefs.getString('ad') ?? '';
+    _meslekController.text = prefs.getString('meslek') ?? '';
+    _emailController.text = prefs.getString('email') ?? '';
+    _telefonController.text = prefs.getString('telefon') ?? '';
+    _linkedinController.text = prefs.getString('linkedin') ?? '';
+    _egitimController.text = prefs.getString('egitim') ?? '';
+    _deneyimController.text = prefs.getString('deneyim') ?? '';
+    _yeteneklerController.text = prefs.getString('yetenekler') ?? '';
+    _projelerController.text = prefs.getString('projeler') ?? '';
+    _dillerController.text = prefs.getString('diller') ?? '';
+    _secilenSablon = prefs.getString('secilen_sablon') ?? 'modern';
+  });
+}
 
   // 🚀 YENİ: Dinamik Yükleme Ekranı Değişkenleri
   Timer? _loadingTimer;
@@ -64,9 +97,36 @@ class _CVMakerPageState extends State<CVMakerPage> {
   String _secilenSablon = 'klasik';
   String _cvDili = 'Türkçe';
 
+  // 🚀 GÜNCELLENDİ: İkonlar yerine resim yolları eklendi
+  final List<Map<String, dynamic>> _sablonListesi = [
+    {
+      "id": "modern", 
+      "ad": "Modern CV", 
+      "alt_baslik": "Ferah ve Çift Kolonlu",
+      "renk": Colors.teal, 
+      // 👇 İkon yerine resim yolunu yazıyoruz
+      "resim_yolu": "assets/images/modern_onizleme.jpg"
+    },
+    {
+      "id": "klasik", 
+      "ad": "Klasik Kurumsal", 
+      "alt_baslik": "Resmi ve ATS Uyumlu",
+      "renk": Colors.blueGrey, 
+      "resim_yolu": "assets/images/klasik_onizleme.jpg"
+    },
+    {
+      "id": "teknik", 
+      "ad": "Teknik IT", 
+      "alt_baslik": "Yazılımcılara Özel",
+      "renk": Colors.green.shade700, 
+      "resim_yolu": "assets/images/teknik_onizleme.jpg"
+    },
+  ];
+
   @override
   void initState() {
     super.initState();
+    _taslakYukle();
     _bakiyeSorgula(); // 🚀 Sayfa açılır açılmaz bakiyeyi Python'dan çek
   }
   Future<void> _fotoSec() async {
@@ -114,6 +174,22 @@ class _CVMakerPageState extends State<CVMakerPage> {
   }
 
   Future<void> _generateAndDownloadCV() async {
+    // 🛡️ Boş Alan Kontrolü
+    if (_adController.text.trim().isEmpty || 
+        _emailController.text.trim().isEmpty || 
+        _meslekController.text.trim().isEmpty) {
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Lütfen Ad, E-posta ve Meslek alanlarını doldurun!'),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return; // Hata varsa fonksiyonu burada bitir, Python'a gitme!
+    }
+    
+
     setState(() {
       _isLoading = true;
       _loadingTextIndex = 0;
@@ -188,15 +264,14 @@ class _CVMakerPageState extends State<CVMakerPage> {
         final file = File('${dir.path}/$olusturulanDosyaAdi');
         await file.writeAsBytes(bytes);
         
-        ScaffoldMessenger.of(context).clearSnackBars();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('CV Başarıyla Üretildi! Açılıyor...')),
-        );
-
-        OpenFilex.open(file.path);
+        // Bakiye güncelleniyor
         _bakiyeSorgula(); 
-
+        
+        // Başarı diyaloğu dosya yolu ile çağrılıyor (Otomatik açma yok, butona basınca açılacak)
+        _basariDialogGoster(file.path);
+        
       } else {
+        // Sunucu hatası durumunda hata fırlatan sigorta bloğumuz
         throw Exception('Sunucu Hatası: ${response.statusCode}');
       }
     } catch (e) {
@@ -209,6 +284,7 @@ class _CVMakerPageState extends State<CVMakerPage> {
         _isLoading = false;
       });
     }
+    
   }
   // 🚀 YENİ: Bakiye Yetersiz Uyarı Penceresi
   void _showBakiyeYetersizDialog(int gereken, int mevcut) {
@@ -242,6 +318,171 @@ class _CVMakerPageState extends State<CVMakerPage> {
     );
   }
 
+  // 🚀 GÜNCELLENDİ: Büyük Önizlemeli ve Şık Şablon Galerisi
+  Widget _buildSablonGalerisi() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "CV Şablonunuzu Seçin",
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 320, // 👈 DİKKAT: A4 boyutunu yansıtması için yüksekliği 320 yaptık!
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            itemCount: _sablonListesi.length,
+            itemBuilder: (context, index) {
+              final sablon = _sablonListesi[index];
+              final bool isSelected = _secilenSablon == sablon['id'];
+
+              return GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _secilenSablon = sablon['id'];
+                  });
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                  width: 190, // 👈 DİKKAT: Kart genişliğini 190 yaptık!
+                  margin: const EdgeInsets.only(right: 16, bottom: 8, top: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isSelected ? sablon['renk'] : Colors.grey.shade300,
+                      width: isSelected ? 3 : 1,
+                    ),
+                    boxShadow: [
+                      if (isSelected)
+                        BoxShadow(
+                          color: sablon['renk'].withOpacity(0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        )
+                    ],
+                  ),
+                  child: Stack(
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // 🚀 YENİ: Resim kısmı (Tüm üst alanı kenardan kenara kaplar)
+                          Expanded(
+                            child: ClipRRect(
+                              borderRadius: const BorderRadius.only(
+                                topLeft: Radius.circular(14),
+                                topRight: Radius.circular(14),
+                              ),
+                              child: Image.asset(
+                                sablon['resim_yolu'],
+                                fit: BoxFit.cover, // Resmi sündürmez
+                                alignment: Alignment.topCenter, // CV'nin üst kısmına odaklanır
+                              ),
+                            ),
+                          ),
+                          // Yazı Kısmı (Altta)
+                          Container(
+                            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                            decoration: BoxDecoration(
+                              color: isSelected ? sablon['renk'].withOpacity(0.1) : Colors.white,
+                              borderRadius: const BorderRadius.only(
+                                bottomLeft: Radius.circular(14),
+                                bottomRight: Radius.circular(14),
+                              ),
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  sablon['ad'],
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: isSelected ? sablon['renk'] : Colors.black87,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  sablon['alt_baslik'],
+                                  textAlign: TextAlign.center,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      // Seçili Tik İşareti (Sağ üst köşe)
+                      if (isSelected)
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: Container(
+                            padding: const EdgeInsets.all(2),
+                            decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.white,
+                            ),
+                            child: Icon(Icons.check_circle, color: sablon['renk'], size: 26),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+  // 🚀 YENİ: Dosya yolunu (filePath) alan ve butona basınca açan diyalog
+  void _basariDialogGoster(String filePath) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.check_circle, color: Colors.green, size: 80),
+            const SizedBox(height: 20),
+            const Text(
+              "Harika!",
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
+            const Text("Profesyonel CV'niz başarıyla oluşturuldu.", textAlign: TextAlign.center),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context); // Önce diyaloğu kapat
+                OpenFilex.open(filePath); // 👈 SADECE BURAYA BASINCA PDF AÇILIR
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green, 
+                shape: const StadiumBorder(),
+                padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+              ),
+              child: const Text("CV'yi Görüntüle", style: TextStyle(color: Colors.white)),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Daha Sonra Bak", style: TextStyle(color: Colors.grey)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -401,11 +642,11 @@ class _CVMakerPageState extends State<CVMakerPage> {
                       ),
                       const SizedBox(height: 15), // Fotoğraf ile form arasına boşluk
 
-                      TextField(controller: _adController, decoration: const InputDecoration(labelText: 'Ad Soyad', prefixIcon: Icon(Icons.person))),
-                      TextField(controller: _meslekController, decoration: const InputDecoration(labelText: 'Hedef Meslek', prefixIcon: Icon(Icons.work))),
-                      TextField(controller: _emailController, decoration: const InputDecoration(labelText: 'E-Posta', prefixIcon: Icon(Icons.email))),
-                      TextField(controller: _telefonController, decoration: const InputDecoration(labelText: 'Telefon', prefixIcon: Icon(Icons.phone))),
-                      TextField(controller: _linkedinController, decoration: const InputDecoration(labelText: 'LinkedIn URL', prefixIcon: Icon(Icons.link))),
+                      TextField(controller: _adController, decoration: const InputDecoration(labelText: 'Ad Soyad', prefixIcon: Icon(Icons.person)),onChanged: (value) => _taslakKaydet(),),
+                      TextField(controller: _meslekController, decoration: const InputDecoration(labelText: 'Hedef Meslek', prefixIcon: Icon(Icons.work)),onChanged: (value) => _taslakKaydet(),),
+                      TextField(controller: _emailController, decoration: const InputDecoration(labelText: 'E-Posta', prefixIcon: Icon(Icons.email)),onChanged: (value) => _taslakKaydet(),),
+                      TextField(controller: _telefonController, decoration: const InputDecoration(labelText: 'Telefon', prefixIcon: Icon(Icons.phone)),onChanged: (value) => _taslakKaydet(),),
+                      TextField(controller: _linkedinController, decoration: const InputDecoration(labelText: 'LinkedIn URL', prefixIcon: Icon(Icons.link)),onChanged: (value) => _taslakKaydet(),),
                     ],
                   ),
                 ),
@@ -414,9 +655,9 @@ class _CVMakerPageState extends State<CVMakerPage> {
                   title: const Text('Eğitim ve Deneyim', style: TextStyle(fontWeight: FontWeight.bold)),
                   content: Column(
                     children: [
-                      TextField(controller: _egitimController, maxLines: 3, decoration: const InputDecoration(labelText: 'Eğitim Bilgileri', border: OutlineInputBorder())),
+                      TextField(controller: _egitimController, maxLines: 3, decoration: const InputDecoration(labelText: 'Eğitim Bilgileri', border: OutlineInputBorder()),onChanged: (value) => _taslakKaydet(),),
                       const SizedBox(height: 10),
-                      TextField(controller: _deneyimController, maxLines: 3, decoration: const InputDecoration(labelText: 'İş ve Staj Deneyimleri', border: OutlineInputBorder())),
+                      TextField(controller: _deneyimController, maxLines: 3, decoration: const InputDecoration(labelText: 'İş ve Staj Deneyimleri', border: OutlineInputBorder()),onChanged: (value) => _taslakKaydet(),),
                     ],
                   ),
                 ),
@@ -425,11 +666,11 @@ class _CVMakerPageState extends State<CVMakerPage> {
                   title: const Text('Yetenekler ve Projeler', style: TextStyle(fontWeight: FontWeight.bold)),
                   content: Column(
                     children: [
-                      TextField(controller: _yeteneklerController, maxLines: 2, decoration: const InputDecoration(labelText: 'Yetenekler', border: OutlineInputBorder())),
+                      TextField(controller: _yeteneklerController, maxLines: 2, decoration: const InputDecoration(labelText: 'Yetenekler', border: OutlineInputBorder()),onChanged: (value) => _taslakKaydet(),),
                       const SizedBox(height: 10),
-                      TextField(controller: _projelerController, maxLines: 3, decoration: const InputDecoration(labelText: 'Projeler ve Başarılar', border: OutlineInputBorder())),
+                      TextField(controller: _projelerController, maxLines: 3, decoration: const InputDecoration(labelText: 'Projeler ve Başarılar', border: OutlineInputBorder()),onChanged: (value) => _taslakKaydet(),),
                       const SizedBox(height: 10),
-                      TextField(controller: _dillerController, decoration: const InputDecoration(labelText: 'Yabancı Diller', border: OutlineInputBorder())),
+                      TextField(controller: _dillerController, decoration: const InputDecoration(labelText: 'Yabancı Diller', border: OutlineInputBorder()),onChanged: (value) => _taslakKaydet(),),
                       const SizedBox(height: 10),
                       // 🚀 YENİ EKLENEN GITHUB KUTUSU
                       TextField(
@@ -465,20 +706,8 @@ class _CVMakerPageState extends State<CVMakerPage> {
                       ),
                       const SizedBox(height: 20),
                       const Text('Tasarım Şablonu:', style: TextStyle(fontWeight: FontWeight.bold)),
-                      DropdownButtonFormField<String>(
-                        value: _secilenSablon,
-                        decoration: const InputDecoration(border: OutlineInputBorder()),
-                        items: const [
-                          DropdownMenuItem(value: 'klasik', child: Text('Kurumsal Klasik (2 Jeton)')),
-                          DropdownMenuItem(value: 'modern', child: Text('Modern Minimalist (30 Jeton)')),
-                          DropdownMenuItem(value: 'teknik', child: Text('Teknofest/TÜBİTAK Özel (30 Jeton)')),
-                        ],
-                        onChanged: (value) {
-                          setState(() {
-                            _secilenSablon = value!;
-                          });
-                        },
-                      ),
+                      // Eski Dropdown kodunu sildiğin yere sadece bunu yaz:
+                      _buildSablonGalerisi(),
                     ],
                   ),
                 ),

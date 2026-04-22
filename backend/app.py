@@ -456,25 +456,23 @@ def generate_cv():
                 css_kodlari = f.read()
 
         # ==========================================
-        # 🚀 2. DEĞİŞİKLİK: FOTOĞRAFI DOSYA OLARAK KAYDETME VE GÖMME
+        # 🚀 2. DEĞİŞİKLİK: FOTOĞRAFI "HAVADA" YAKALAYIP GÖMME
         # ==========================================
-        import base64 # Bu en üstte yoksa diye buraya da ekleyebiliriz sorun olmaz
+        import base64
         pdf_uyumlu_yol = ""
         
         if 'profil_foto' in request.files:
             foto = request.files['profil_foto']
             if foto.filename != '':
-                # 1. Fotoğrafı kaliteli şekilde kaydet
-                kayit_yolu = os.path.join('static', f'profil_{uid}.jpg')
-                foto.save(kayit_yolu)
+                # 1. Fotoğrafın GERÇEK formatını öğreniyoruz (image/jpeg, image/png vb.)
+                mime_tipi = foto.content_type
                 
-                # 2. 🚀 TRUVA ATI: Kaydedilen bu kaliteli dosyayı Python'a okutuyoruz
-                with open(kayit_yolu, "rb") as f:
-                    resim_verisi = base64.b64encode(f.read()).decode('utf-8')
+                # 2. Dosyayı klasöre KAYDETMEDEN doğrudan okuyup şifreliyoruz
+                resim_verisi = base64.b64encode(foto.read()).decode('utf-8')
                 
-                # 3. PDF motorunun asla reddedemeyeceği "Gömülü Veri" formatına çeviriyoruz
-                pdf_uyumlu_yol = f"data:image/jpeg;base64,{resim_verisi}"
-                print("📸 TRUVA ATI BAŞARILI: Resim HTML'in içine data olarak gömüldü!")
+                # 3. PDF motoruna kendi anladığı dilde, doğru kimlikle teslim ediyoruz
+                pdf_uyumlu_yol = f"data:{mime_tipi};base64,{resim_verisi}"
+                print(f"📸 TRUVA ATI 2.0 BAŞARILI: Format -> {mime_tipi}")
 
         # 3. HTML'e hem bilgileri, hem okuduğumuz CSS kodlarını, hem de KALİTELİ FOTO YOLUNU gönder
         html_content = render_template(

@@ -2,63 +2,70 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>{{ ad }} - Profesyonel CV</title>
+    <title>{{ ad }} - Klasik CV</title>
     <style>
-        body { font-family: 'Arial', sans-serif; line-height: 1.6; color: #333; margin: 40px; }
-        .header { text-align: center; border-bottom: 3px solid #2c3e50; padding-bottom: 15px; margin-bottom: 25px; }
-        .name { font-size: 36px; font-weight: bold; color: #2c3e50; margin: 0; text-transform: uppercase; letter-spacing: 1px; }
-        .title { font-size: 22px; color: #7f8c8d; margin-top: 5px; font-weight: normal; }
-        .contact-info { font-size: 14px; color: #555; margin-top: 10px; }
+        body { font-family: 'Times New Roman', Times, serif; color: #000000; margin: 40px; background-color: #ffffff; }
+        
+        /* KLASİK ÜST BİLGİ TABLOSU */
+        .header-table { width: 100%; border-bottom: 2px solid #000000; padding-bottom: 20px; margin-bottom: 25px; }
+        .header-left { vertical-align: middle; }
+        .header-right { vertical-align: middle; text-align: right; width: 130px; }
+        
+        .name { font-size: 38px; font-weight: bold; text-transform: uppercase; margin: 0; letter-spacing: 1px; }
+        .title { font-size: 18px; font-style: italic; color: #333333; margin-top: 5px; }
+        .contact { font-size: 13px; margin-top: 10px; line-height: 1.4; }
+        
+        /* FOTOĞRAF (Düz Kare) */
+        .profile-img { width: 110px; height: 110px; border: 1px solid #000; object-fit: cover; }
+        
+        /* BÖLÜMLER */
         .section { margin-bottom: 25px; }
-        .section-title { font-size: 20px; font-weight: bold; color: #2980b9; border-bottom: 1px solid #bdc3c7; padding-bottom: 5px; margin-bottom: 15px; text-transform: uppercase; }
-        .content { font-size: 15px; white-space: pre-line; }
-        .about-box { background-color: #ecf0f1; padding: 20px; border-left: 5px solid #2980b9; margin-bottom: 30px; border-radius: 0 5px 5px 0; }
-        .about-text { font-size: 15px; font-style: italic; color: #34495e; text-align: justify; }
-        .badge { display: inline-block; background-color: #ecf0f1; padding: 5px 10px; margin: 3px; border-radius: 15px; font-size: 14px; border: 1px solid #bdc3c7; }
+        .section-title { font-size: 16px; font-weight: bold; text-transform: uppercase; background-color: #f0f0f0; padding: 5px 10px; border: 1px solid #ccc; margin-bottom: 10px; letter-spacing: 1px; }
+        .content { font-size: 13px; line-height: 1.6; white-space: pre-line; padding: 0 10px; }
+        .about-text { font-size: 14px; font-style: italic; margin-bottom: 25px; padding: 0 10px; text-align: justify; }
     </style>
 </head>
 <body>
+    <table class="header-table">
+        <tr>
+            <td class="header-left">
+                <h1 class="name">{{ ad }}</h1>
+                <div class="title">{{ meslek }}</div>
+                <div class="contact">
+                    <strong>E-Posta:</strong> {{ email }} &nbsp;|&nbsp; <strong>Tel:</strong> {{ telefon }}<br>
+                    {% if linkedin %}<strong>LinkedIn:</strong> {{ linkedin }}{% endif %}
+                </div>
+            </td>
+            <td class="header-right">
+                {% if profil_foto %}
+                    <img src="{{ profil_foto | safe }}" class="profile-img" alt="Profil">
+                {% else %}
+                    <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" class="profile-img" alt="Profil">
+                {% endif %}
+            </td>
+        </tr>
+    </table>
 
-    <div class="header">
-        <h1 class="name">{{ ad }}</h1>
-        <h2 class="title">{{ meslek }}</h2>
-        <div class="contact-info">
-            {{ email }} | {{ telefon }} {% if linkedin %} | {{ linkedin }}{% endif %}
-        </div>
-    </div>
-
-    <div class="about-box">
-        <div class="about-text">
-            {{ hakkimda }}
-        </div>
-    </div>
+    <div class="about-text">{{ hakkimda }}</div>
 
     <div class="section">
         <div class="section-title">Eğitim Bilgileri</div>
         <div class="content">{{ egitim }}</div>
     </div>
-
+    
     <div class="section">
-        <div class="section-title">İş ve Staj Deneyimleri</div>
+        <div class="section-title">İş ve Staj Deneyimi</div>
         <div class="content">{{ deneyim }}</div>
     </div>
-
+    
     <div class="section">
-        <div class="section-title">Yetenekler</div>
-        <div class="content">{{ yetenekler }}</div>
+        <div class="section-title">Yetenekler ve Diller</div>
+        <div class="content"><strong>Teknik Yetenekler:</strong><br>{{ yetenekler }}<br><br><strong>Yabancı Diller:</strong><br>{{ diller }}</div>
     </div>
-
+    
     <div class="section">
         <div class="section-title">Projeler ve Başarılar</div>
         <div class="content">{{ projeler }}</div>
-    </div>
-
-    <div class="section">
-        <div class="section-title">Yabancı Diller</div>
-        <div class="content">{{ diller }}</div>
-    </div>
-    <div style="position: fixed; bottom: 20px; right: 20px; font-size: 12px; color: #95a5a6; font-style: italic;">
-        ⚡ Mesleki Asistan ile üretilmiştir. (Ücretsiz Sürüm)
     </div>
 </body>
 </html>

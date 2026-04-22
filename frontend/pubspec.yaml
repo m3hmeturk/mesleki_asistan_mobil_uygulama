@@ -37,3 +37,6 @@ flutter:
 
   assets:
     - .env
+    - assets/images/modern_onizleme.jpg
+    - assets/images/klasik_onizleme.jpg
+    - assets/images/teknik_onizleme.jpg

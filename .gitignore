@@ -1,0 +1,14 @@
+# Python çıktıları ve sanal ortam
+__pycache__/
+.venv/
+.env
+
+# Üretilen CV dosyaları (Senin PDF'lerin buraya takılacak)
+backend/generated_cvs/
+*.pdf
+
+# Flutter / Dart çıktıları
+build/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies

@@ -4,49 +4,77 @@
     <meta charset="UTF-8">
     <title>{{ ad }} - Teknik CV</title>
     <style>
-        body { font-family: 'Courier New', Courier, monospace; color: #000; margin: 30px; line-height: 1.5; }
-        .header { border: 2px solid #000; padding: 20px; text-align: center; margin-bottom: 30px; background-color: #f8f9fa; }
-        .name { font-size: 32px; font-weight: bold; margin: 0; text-transform: uppercase; }
-        .title { font-size: 18px; margin-top: 5px; font-weight: bold; }
-        .contact { font-size: 14px; margin-top: 10px; }
-        .tech-box { border: 1px solid #000; padding: 15px; margin-bottom: 20px; }
-        .section-title { background-color: #000; color: #fff; display: inline-block; padding: 5px 10px; font-weight: bold; font-size: 16px; margin-bottom: 10px; margin-top: -30px; margin-left: 10px; text-transform: uppercase;}
-        .content { font-size: 14px; white-space: pre-line; margin-top: 10px; }
-        .about-text { font-size: 14px; text-align: justify; margin-bottom: 20px; font-family: 'Arial', sans-serif; }
+        body { font-family: 'Courier New', Courier, monospace; background-color: #ffffff; color: #2b2b2b; margin: 0; padding: 0; }
+        
+        /* KOYU RENKLİ TEPE KUTUSU */
+        .header-wrapper { background-color: #1e1e1e; padding: 40px; margin-bottom: 30px; border-bottom: 5px solid #4ade80; }
+        .header-table { width: 100%; color: #ffffff; }
+        
+        .name { font-size: 36px; font-weight: bold; margin: 0; color: #ffffff; letter-spacing: -1px; }
+        .title { font-size: 18px; color: #4ade80; margin-top: 8px; font-weight: bold; }
+        .contact { font-size: 12px; color: #a0a0a0; margin-top: 15px; line-height: 1.6; }
+        .contact span { color: #4ade80; }
+        
+        /* FOTOĞRAF (Yuvarlak Köşeli Kare) */
+        .profile-img { width: 120px; height: 120px; border: 3px solid #4ade80; border-radius: 12px; object-fit: cover; background-color: white;}
+        
+        .container { padding: 0 40px 40px 40px; }
+        
+        /* BÖLÜM KUTULARI */
+        .section { background-color: #f8f9fa; border: 1px solid #e9ecef; border-left: 4px solid #1e1e1e; padding: 20px; margin-bottom: 20px; border-radius: 0 8px 8px 0; }
+        .section-title { font-size: 18px; font-weight: bold; color: #1e1e1e; border-bottom: 1px dashed #ccc; padding-bottom: 8px; margin-bottom: 15px; text-transform: uppercase; }
+        .section-title span { color: #4ade80; }
+        
+        .content { font-size: 13px; line-height: 1.7; white-space: pre-line; }
+        .about-text { font-size: 14px; margin-bottom: 30px; font-weight: bold; color: #444; border-left: 4px solid #4ade80; padding-left: 15px; }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1 class="name">{{ ad }}</h1>
-        <div class="title">/// {{ meslek }} ///</div>
-        <div class="contact">E-Posta: {{ email }} | Tel: {{ telefon }} {% if linkedin %}| Ağ: {{ linkedin }}{% endif %}</div>
+    <div class="header-wrapper">
+        <table class="header-table">
+            <tr>
+                <td style="vertical-align: middle;">
+                    <h1 class="name">> {{ ad }}</h1>
+                    <div class="title">~/{{ meslek }}</div>
+                    <div class="contact">
+                        <span>[email]</span> {{ email }} <br>
+                        <span>[phone]</span> {{ telefon }} <br>
+                        {% if linkedin %}<span>[link]</span> {{ linkedin }}{% endif %}
+                    </div>
+                </td>
+                <td style="text-align: right; vertical-align: middle; width: 140px;">
+                    {% if profil_foto %}
+                        <img src="{{ profil_foto | safe }}" class="profile-img" alt="Profil">
+                    {% else %}
+                        <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" class="profile-img" alt="Profil">
+                    {% endif %}
+                </td>
+            </tr>
+        </table>
     </div>
 
-    <div class="about-text"><strong>> PROFİL ÖZETİ:</strong> <br> {{ hakkimda }}</div>
+    <div class="container">
+        <div class="about-text">{{ hakkimda }}</div>
+        
+        <div class="section">
+            <div class="section-title"><span>#</span> Yetenekler_ve_Diller</div>
+            <div class="content">{{ yetenekler }}<br><br><strong>Diller:</strong> {{ diller }}</div>
+        </div>
 
-    <div class="tech-box">
-        <div class="section-title">EĞİTİM & AKADEMİK</div>
-        <div class="content">{{ egitim }}</div>
-    </div>
-
-    <div class="tech-box">
-        <div class="section-title">AR-GE & İŞ DENEYİMİ</div>
-        <div class="content">{{ deneyim }}</div>
-    </div>
-
-    <div class="tech-box">
-        <div class="section-title">YAZILIM & DONANIM YETENEKLERİ</div>
-        <div class="content">{{ yetenekler }}</div>
-    </div>
-
-    <div class="tech-box">
-        <div class="section-title">PROJELER & YARIŞMALAR</div>
-        <div class="content">{{ projeler }}</div>
-    </div>
-
-    <div class="tech-box">
-        <div class="section-title">YABANCI DİL</div>
-        <div class="content">{{ diller }}</div>
+        <div class="section">
+            <div class="section-title"><span>#</span> Egitim_Gecmisi</div>
+            <div class="content">{{ egitim }}</div>
+        </div>
+        
+        <div class="section">
+            <div class="section-title"><span>#</span> Is_Deneyimi</div>
+            <div class="content">{{ deneyim }}</div>
+        </div>
+        
+        <div class="section">
+            <div class="section-title"><span>#</span> Projeler</div>
+            <div class="content">{{ projeler }}</div>
+        </div>
     </div>
 </body>
 </html>

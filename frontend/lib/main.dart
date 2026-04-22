@@ -86,14 +86,7 @@ class _AnaEkranState extends State<AnaEkran> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        elevation: 0,
-        title: const Text(
-          'Kariyer Asistanı', 
-          style: TextStyle(fontWeight: FontWeight.bold) 
-        ),
-        centerTitle: true,
-      ),
+      
       body: _sayfalar.elementAt(_secilenIndex),
       
       // Şık Alt Menümüz (GNav)
