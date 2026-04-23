@@ -499,7 +499,7 @@ def generate_cv():
         pdf_path = f"generated_cvs/{gelen_dosya_adi}" 
         if not os.path.exists('generated_cvs'): os.makedirs('generated_cvs')
         
-        # HTML kodunu alıp saniyeler içinde takılmadan PDF'e basıyoruz
+        # HTML kodunu alıp saniyeler içinde takılmadan PDF'e basıyoruzzz
         with open(pdf_path, "w+b") as result_file:
             pisa.CreatePDF(html_content, dest=result_file)
 
