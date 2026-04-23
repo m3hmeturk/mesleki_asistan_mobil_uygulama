@@ -18,13 +18,8 @@ from bson.objectid import ObjectId
 load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# Eğer kod senin bilgisayarında (Windows) çalışıyorsa:
-if platform.system() == 'Windows':
-    path_wkhtmltopdf = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe'
-    pdf_config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
-# Eğer kod DigitalOcean sunucusunda (Linux) çalışıyorsa:
-else:
-    pdf_config = pdfkit.configuration()
+# (Eski pdfkit ayarları tamamen silindi)
+
 app = Flask(__name__)
 # Flutter'dan gelen isteklere izin veriyoruz
 CORS(app)
