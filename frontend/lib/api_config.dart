@@ -1,6 +1,4 @@
-// lib/api_config.dart
-
 class ApiConfig {
-  // IP adresin değiştiğinde SADECE BURAYI değiştireceksin!
-  static const String baseUrl = 'http://10.214.57.101:5000';
+  // Artık sunucumuz tüm dünyaya açık! (DigitalOcean)
+  static const String baseUrl = 'https://mesleki-asistan-x54y8.ondigitalocean.app';
 }
