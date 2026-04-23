@@ -1,5 +1,5 @@
 # 1. Temel bir Linux ve Python bilgisayarı al
-FROM python:3.11-slim
+FROM python:3.11-bullseye
 
 # 2. PDF motorumuzu (wkhtmltopdf) Linux'a zorla kur!
 RUN apt-get update && apt-get install -y wkhtmltopdf
