@@ -3,6 +3,7 @@ import certifi
 import datetime
 import json
 import pdfkit
+import platform
 import requests
 import base64
 from flask import Flask, jsonify, request, send_file, render_template
@@ -17,13 +18,13 @@ from bson.objectid import ObjectId
 load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# ==========================================
-# 🚀 YENİ EKLENEN: PDF MOTORU AYARI
-# ==========================================
-# DİKKAT: Bilgisayarındaki wkhtmltopdf kurulum yolu burası olmalı. Farklıysa burayı değiştir.
-path_to_wkhtmltopdf = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe'
-pdf_config = pdfkit.configuration(wkhtmltopdf=path_to_wkhtmltopdf)
-
+# Eğer kod senin bilgisayarında (Windows) çalışıyorsa:
+if platform.system() == 'Windows':
+    path_wkhtmltopdf = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe'
+    pdf_config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
+# Eğer kod DigitalOcean sunucusunda (Linux) çalışıyorsa:
+else:
+    pdf_config = pdfkit.configuration()
 app = Flask(__name__)
 # Flutter'dan gelen isteklere izin veriyoruz
 CORS(app)
