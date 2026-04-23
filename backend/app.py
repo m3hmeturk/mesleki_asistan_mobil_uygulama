@@ -2,7 +2,7 @@ import os
 import certifi
 import datetime
 import json
-import pdfkit
+from xhtml2pdf import pisa
 import platform
 import requests
 import base64
@@ -494,21 +494,14 @@ def generate_cv():
         )
 
         # ==========================================
-        # 🚀 5. PDF'E DÖNÜŞTÜRME
+        # 🚀 5. PDF'E DÖNÜŞTÜRME (YENİ: xhtml2pdf motoru)
         # ==========================================
-        secenekler = {
-            'page-size': 'A4',
-            'encoding': 'UTF-8',
-            'enable-local-file-access': '',
-            'disable-javascript': '',             # JavaScript yüzünden donmasını engeller
-            'load-error-handling': 'ignore',      # Font/Resim bulamazsa donmaz, yoksayar
-            'load-media-error-handling': 'ignore' # Medya hatalarını yoksayar
-        }
-
         pdf_path = f"generated_cvs/{gelen_dosya_adi}" 
         if not os.path.exists('generated_cvs'): os.makedirs('generated_cvs')
         
-        pdfkit.from_string(html_content, pdf_path, configuration=pdf_config, options=secenekler)
+        # HTML kodunu alıp saniyeler içinde takılmadan PDF'e basıyoruz
+        with open(pdf_path, "w+b") as result_file:
+            pisa.CreatePDF(html_content, dest=result_file)
 
         # 6. JETON DÜŞME
         users_collection.update_one(
