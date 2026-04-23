@@ -497,12 +497,12 @@ def generate_cv():
         # 🚀 5. PDF'E DÖNÜŞTÜRME
         # ==========================================
         secenekler = {
-            'enable-local-file-access': "", 
-            'encoding': "UTF-8",
-            'margin-top': '0mm',
-            'margin-right': '0mm',
-            'margin-bottom': '0mm',
-            'margin-left': '0mm'
+            'page-size': 'A4',
+            'encoding': 'UTF-8',
+            'enable-local-file-access': '',
+            'disable-javascript': '',             # JavaScript yüzünden donmasını engeller
+            'load-error-handling': 'ignore',      # Font/Resim bulamazsa donmaz, yoksayar
+            'load-media-error-handling': 'ignore' # Medya hatalarını yoksayar
         }
 
         pdf_path = f"generated_cvs/{gelen_dosya_adi}" 
