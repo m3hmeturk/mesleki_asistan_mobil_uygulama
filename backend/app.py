@@ -1,8 +1,8 @@
 import os
+import io
 import certifi
 import datetime
 import json
-from xhtml2pdf import pisa
 import platform
 import requests
 import base64
@@ -489,14 +489,31 @@ def generate_cv():
         )
 
         # ==========================================
-        # 🚀 5. PDF'E DÖNÜŞTÜRME (YENİ: xhtml2pdf motoru)
+        # 🚀 5. PDF'E DÖNÜŞTÜRME (YENİ: VERCEL CHROME MOTORU)
         # ==========================================
-        pdf_path = f"generated_cvs/{gelen_dosya_adi}" 
-        if not os.path.exists('generated_cvs'): os.makedirs('generated_cvs')
-        
-        # HTML kodunu alıp saniyeler içinde takılmadan PDF'e basıyoruzzz
-        with open(pdf_path, "w+b") as result_file:
-            pisa.CreatePDF(html_content, dest=result_file)
+        VERCEL_API_URL = "https://pdf-motoru.vercel.app/api/generate"
+
+        try:
+            # 1. HTML kodumuzu paketleyip Vercel'deki fabrikamıza fırlatıyoruz
+            response = requests.post(VERCEL_API_URL, json={"html": html_content})
+
+            # 2. Eğer Vercel motoru işi başarıyla bitirip PDF'i yolladıysa (Status 200)
+            if response.status_code == 200:
+                # Gelen PDF'i DO sunucusuna kaydetmeden direkt RAM'de tut
+                pdf_data = io.BytesIO(response.content)
+                
+                # 3. Ve hiç bekletmeden telefona (Flutter'a) fırlat!
+                return send_file(
+                    pdf_data, 
+                    mimetype='application/pdf', 
+                    as_attachment=True, 
+                    download_name=gelen_dosya_adi
+                )
+            else:
+                return jsonify({"error": "Vercel PDF Motoru Hatası", "details": response.text}), 500
+
+        except Exception as e:
+            return jsonify({"error": "PDF Motoruna Bağlanılamadı", "details": str(e)}), 500
 
         # 6. JETON DÜŞME
         users_collection.update_one(
