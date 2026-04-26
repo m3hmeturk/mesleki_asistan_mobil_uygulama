@@ -426,9 +426,9 @@ def generate_cv():
         {{ "hakkimda": "...", "egitim": "...", "deneyim": "...", "yetenekler": "...", "projeler": "...", "diller": "..." }}
         """
         
-        # 🌟 YENİ: EĞER KULLANICI KARİYER TESTİ ÇÖZDÜYSE, DNA'SINI PROMPT'A EKLİYORUZ!
-        if dnaContext:
-            ai_prompt += f"\n\n🚨 ÖNEMLİ PSİKOLOJİK PROFİL (Kariyer DNA'sı): Kullanıcının çözdüğü kişilik testlerine göre baskın özellikleri şunlardır: {dnaContext}. Lütfen üreteceğin 'hakkimda' özetinde adayın bu karakteristik güçlerini ve çalışma stilini mutlaka vurgula! Adeta onu yıllardır tanıyan bir İK uzmanı gibi kişiselleştirilmiş bir dil kullan.\n"
+        # 🌟 İŞTE DÜZELTİLEN KISIM BURASI (dnaContext yerine dna_context yazıldı)
+        if dna_context:
+            ai_prompt += f"\n\n🚨 ÖNEMLİ PSİKOLOJİK PROFİL (Kariyer DNA'sı): Kullanıcının çözdüğü kişilik testlerine göre baskın özellikleri şunlardır: {dna_context}. Lütfen üreteceğin 'hakkimda' özetinde adayın bu karakteristik güçlerini ve çalışma stilini mutlaka vurgula! Adeta onu yıllardır tanıyan bir İK uzmanı gibi kişiselleştirilmiş bir dil kullan.\n"
         
         response = openai_client.chat.completions.create(
             model="gpt-4o-mini",
@@ -480,7 +480,7 @@ def generate_cv():
         html_content = render_template(
             f'{secilen_sablon}.html',
             css_kodlari=css_kodlari, 
-            profil_foto=pdf_uyumlu_yol,  # 🚀 BURASI DEĞİŞTİ!
+            profil_foto=pdf_uyumlu_yol,  
             ad=kisisel_bilgiler.get('ad', ''),
             meslek=kisisel_bilgiler.get('meslek', ''),
             email=kisisel_bilgiler.get('email', ''),
