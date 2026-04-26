@@ -81,13 +81,13 @@ class _TestsPageState extends State<TestsPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    "Yapay zekanın seni tanıması ve kusursuz mesleği önermesi için testleri tamamla.",
-                    style: TextStyle(color: Colors.grey, fontSize: 14, height: 1.5),
-                    textAlign: TextAlign.center,
-                  ),
+                  // 1. DİNAMİK İLERLEME KARTI (Toplam test sayısını gönderiyoruz)
+                  _buildGenelIlerlemeKarti(_testList.length, 0), // 0 şimdilik tamamlanan test sayısı
                   const SizedBox(height: 24),
 
+                  // DİKKAT: O aradaki çirkin yazıyı ve SizedBox'ı TAMAMEN SİLDİK! 🗑️
+
+                  // Mevcut Test Katmanları (Akordiyonlar)
                   ...grupluTestler.entries.map((grup) {
                     final kategoriAdi = grup.key;
                     final testler = grup.value;
@@ -95,15 +95,105 @@ class _TestsPageState extends State<TestsPage> {
                     final iconStr = testler.first['kategori_ikon'] ?? '';
                     final premiumMu = testler.first['premium_mu'] ?? false;
 
-                    // DÜZELTİLDİ: Fonksiyon adı artık Türkçe karaktersiz
                     return _buildGenisleyenKart(kategoriAdi, altBaslik, iconStr, premiumMu, testler);
                   }).toList(),
+
+                  const SizedBox(height: 16),
+                  
+                  // 2. En Alttaki Bilgi/Motivasyon Afişi (Zaten amacımızı anlatıyor)
+                  _buildBilgiAfisi(),
+                  const SizedBox(height: 30),
                 ],
               ),
             ),
     );
   }
+  // --- YENİ EKLENEN TASARIM FONKSİYONLARI ---
 
+  // --- DİNAMİKLEŞTİRİLMİŞ İLERLEME KARTI ---
+  Widget _buildGenelIlerlemeKarti(int toplamTest, int tamamlananTest) {
+    // Matematiksel hesaplamalar (Sıfıra bölünme hatasını önlemek için kontrol)
+    double ilerlemeYuzdesi = toplamTest > 0 ? (tamamlananTest / toplamTest) : 0.0;
+    int yuzdeGosterim = (ilerlemeYuzdesi * 100).toInt();
+    
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.deepPurpleAccent.shade400, Colors.deepPurple.shade900],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(color: Colors.deepPurpleAccent.withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 5)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text("📊 Kariyer DNA'n", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(12)),
+                child: Text("Gelişim: %$yuzdeGosterim", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+              )
+            ],
+          ),
+          const SizedBox(height: 16),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: LinearProgressIndicator(
+              value: ilerlemeYuzdesi,
+              minHeight: 8,
+              backgroundColor: Colors.white.withOpacity(0.2),
+              valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            "$tamamlananTest/$toplamTest test tamamlandı. Mükemmel eşleşme için devam et!", 
+            style: const TextStyle(color: Colors.white70, fontSize: 13)
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBilgiAfisi() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.blueAccent.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.blueAccent.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(color: Colors.blueAccent.withOpacity(0.2), shape: BoxShape.circle),
+            child: const Icon(Icons.auto_awesome, color: Colors.blueAccent),
+          ),
+          const SizedBox(width: 16),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text("Neden Test Çözmeliyim?", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                SizedBox(height: 4),
+                Text("Test sonuçların Kariyer DNA'nı oluşturur. Yapay zeka asistanın bu verilerle sana özel CV yazar ve iş önerir.", 
+                  style: TextStyle(color: Colors.grey, fontSize: 12, height: 1.4)),
+              ],
+            ),
+          )
+        ],
+      ),
+    );
+  }
   // DÜZELTİLDİ: "Genisleyen" olarak yazıldı
   Widget _buildGenisleyenKart(String baslik, String altBaslik, String iconStr, bool premiumMu, List<dynamic> testler) {
     return Container(

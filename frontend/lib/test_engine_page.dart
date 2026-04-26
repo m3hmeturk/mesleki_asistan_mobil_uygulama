@@ -74,28 +74,83 @@ class _TestEnginePageState extends State<TestEnginePage> {
     }
   }
 
-  void _testiBitir() {
-    // TODO: Adım 4'te sonuçları API'ye yollayacağız.
-    print("Test Bitti! Verilen Cevaplar: $_cevaplar");
+  Future<void> _testiBitir() async {
+    // 1. Ekranı karart ve Yükleniyor animasyonu göster (Sanki yapay zeka düşünüyor hissi)
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1C1C1E),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text("Tebrikler! 🎉", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        content: const Text("Testi başarıyla tamamladın. Analiz ediliyor...", style: TextStyle(color: Colors.grey)),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context); 
-              Navigator.pop(context); 
-            },
-            child: const Text("Bitir", style: TextStyle(color: Colors.deepPurpleAccent, fontWeight: FontWeight.bold)),
-          )
-        ],
-      )
+      builder: (context) => const Center(child: CircularProgressIndicator(color: Colors.deepPurpleAccent)),
     );
+
+    try {
+      // 2. Cevapları Sunucuya (DigitalOcean'a) Fırlat
+      final url = Uri.parse('${ApiConfig.baseUrl}/api/test/${widget.testId}/submit');
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'cevaplar': _cevaplar}),
+      );
+
+      // 3. Yükleniyor animasyonunu kapat
+      if (!mounted) return;
+      Navigator.pop(context); 
+
+      if (response.statusCode == 200) {
+        final data = json.decode(utf8.decode(response.bodyBytes));
+        final baskinOzellik = data['baskin_ozellik'] ?? 'Belirsiz';
+
+        // 4. Büyüleyici Sonuç Ekranını Göster
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            backgroundColor: const Color(0xFF1C1C1E),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: Colors.deepPurpleAccent.withOpacity(0.5))),
+            title: const Row(
+              children: [
+                Icon(Icons.auto_awesome, color: Colors.deepPurpleAccent),
+                SizedBox(width: 10),
+                Text("Analiz Tamamlandı!", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text("Kariyer DNA'na yeni bir yapı taşı eklendi.", style: TextStyle(color: Colors.grey, fontSize: 14)),
+                const SizedBox(height: 20),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(color: Colors.deepPurpleAccent.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                  child: Column(
+                    children: [
+                      const Text("Baskın Özelliğin", style: TextStyle(color: Colors.grey, fontSize: 12)),
+                      const SizedBox(height: 4),
+                      Text(baskinOzellik, style: const TextStyle(color: Colors.deepPurpleAccent, fontWeight: FontWeight.bold, fontSize: 22)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context); // Pop-up'ı kapat
+                  Navigator.pop(context); // Test listesi sayfasına geri dön
+                },
+                child: const Text("Harika, Devam Et", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              )
+            ],
+          )
+        );
+      } else {
+        _hataGoster("Sonuçlar analiz edilemedi (Hata: ${response.statusCode})");
+      }
+    } catch (e) {
+      if (mounted) Navigator.pop(context); // Hata olursa da yükleniyoru kapat
+      _hataGoster("Bağlantı hatası: $e");
+    }
   }
 
   @override

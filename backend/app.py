@@ -664,7 +664,7 @@ def setup_tests():
                 "kategori": "KATMAN 2: Becerilerini Keşfet",
                 "kategori_alt_baslik": "İlgi alanlarını mesleklerle eşleştir",
                 "kategori_ikon": "Briefcase",
-                "baslik": "Kariyer Eğilim (RIASEC)",
+                "baslik": "Meslek Seçimi (RIASEC)",
                 "soru_sayisi": 30, "sure_dk": 6, "premium_mu": False, "maliyet": 0,
                 "sorular": [
                     {
@@ -800,6 +800,36 @@ def get_test_questions(test_id):
         if test:
             return jsonify({"test_id": test_id, "sorular": test.get("sorular", [])}), 200
         return jsonify({"hata": "Test bulunamadı"}), 404
+    except Exception as e:
+        return jsonify({"hata": str(e)}), 500
+
+@app.route('/api/test/<test_id>/submit', methods=['POST'])
+def submit_test(test_id):
+    """Kullanıcının verdiği cevapları alır ve baskın karakteri/özelliği hesaplar."""
+    try:
+        data = request.json
+        cevaplar = data.get('cevaplar', {}) # Örn: {"q1": "Analitik", "q2": "Sosyal"}
+        
+        if not cevaplar:
+            return jsonify({"hata": "Hiç cevap gönderilmedi!"}), 400
+
+        # Frekans Analizi: Kullanıcı hangi "değer"den kaç tane seçti?
+        sonuc_analizi = {}
+        for soru_id, secilen_deger in cevaplar.items():
+            sonuc_analizi[secilen_deger] = sonuc_analizi.get(secilen_deger, 0) + 1
+            
+        # En çok seçilen (en yüksek puana sahip) özelliği bul (Örn: "Analitik")
+        baskin_ozellik = max(sonuc_analizi, key=sonuc_analizi.get)
+        
+        # TODO: İleride bu sonucu veritabanına ("Kullanıcılar" tablosuna) kaydedeceğiz.
+        # Şimdilik analizi anında Flutter'a geri fırlatıyoruz.
+        
+        return jsonify({
+            "mesaj": "✅ Test analizi tamamlandı!",
+            "baskin_ozellik": baskin_ozellik,
+            "detayli_analiz": sonuc_analizi
+        }), 200
+        
     except Exception as e:
         return jsonify({"hata": str(e)}), 500
 
