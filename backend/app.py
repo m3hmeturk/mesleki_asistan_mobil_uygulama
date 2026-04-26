@@ -494,15 +494,24 @@ def generate_cv():
         VERCEL_API_URL = "https://pdf-motoru.vercel.app/api/generate"
 
         try:
-            # 1. HTML kodumuzu paketleyip Vercel'deki fabrikamıza fırlatıyoruz
+            print("1. Vercel'e istek atılıyor...")
             response = requests.post(VERCEL_API_URL, json={"html": html_content})
+            print(f"2. Vercel'den cevap geldi! Status Code: {response.status_code}")
 
-            # 2. Eğer Vercel motoru işi başarıyla bitirip PDF'i yolladıysa (Status 200)
             if response.status_code == 200:
-                # Gelen PDF'i DO sunucusuna kaydetmeden direkt RAM'de tut
-                pdf_data = io.BytesIO(response.content)
+                print(f"3. PDF başarıyla üretildi! Boyut: {len(response.content)} bayt")
                 
-                # 3. Ve hiç bekletmeden telefona (Flutter'a) fırlat!
+                # Test amaçlı DO sunucusuna da kaydedelim ki dosya boş mu görelim
+                import os
+                if not os.path.exists('generated_cvs'): 
+                    os.makedirs('generated_cvs')
+                
+                pdf_path = f"generated_cvs/{gelen_dosya_adi}" 
+                with open(pdf_path, "wb") as f:
+                    f.write(response.content)
+                
+                # Telefona fırlatıyoruz
+                pdf_data = io.BytesIO(response.content)
                 return send_file(
                     pdf_data, 
                     mimetype='application/pdf', 
@@ -510,10 +519,12 @@ def generate_cv():
                     download_name=gelen_dosya_adi
                 )
             else:
-                return jsonify({"error": "Vercel PDF Motoru Hatası", "details": response.text}), 500
+                print(f"HATA: Vercel'den 200 dönmedi. Gelen Cevap: {response.text}")
+                return jsonify({"error": "Vercel Hatası", "details": response.text}), 500
 
         except Exception as e:
-            return jsonify({"error": "PDF Motoruna Bağlanılamadı", "details": str(e)}), 500
+            print(f"KRİTİK HATA: Vercel'e hiç bağlanılamadı. Detay: {str(e)}")
+            return jsonify({"error": "Bağlantı Hatası", "details": str(e)}), 500
 
         # 6. JETON DÜŞME
         users_collection.update_one(
