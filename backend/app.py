@@ -595,6 +595,80 @@ def delete_cv():
         return jsonify({"error": str(e)}), 500
 
 # ==========================================
+# 🚀 KARİYER TESTLERİ API'LERİ (YENİ SİSTEM)
+# ==========================================
+
+@app.route('/api/setup_tests', methods=['GET'])
+def setup_tests():
+    """
+    DİKKAT: Bu bir kurulum servisidir. 
+    Eski testleri silip, MongoDB'ye yeni profesyonel test yapısını otomatik kurar.
+    """
+    try:
+        # ESKİ SİSTEM KALINTILARINI TEMİZLE
+        db.tests_collection.drop() 
+
+        # YENİ TEST: Kişilik Envanteri (Şimdilik test amaçlı 5 soru)
+        kisilik_testi = {
+            "_id": "kisilik_big5",
+            "kategori": "Kişilik ve Karakter",
+            "kategori_alt_baslik": "Temel özelliklerini ve değerlerini keşfet",
+            "kategori_ikon": "Brain",
+            "baslik": "Kişilik Envanteri (Big Five)",
+            "soru_sayisi": 5, 
+            "sure_dk": 5,
+            "premium_mu": False,
+            "sorular": [
+                {"id": "q1", "soru": "Yeni insanlarla tanışmaktan keyif alırım.", "boyut": "disadonukluk", "ters_mi": False},
+                {"id": "q2", "soru": "Başkalarının duygularını kolayca anlarım.", "boyut": "uyumluluk", "ters_mi": False},
+                {"id": "q3", "soru": "İşlerimi her zaman planlı ve düzenli yaparım.", "boyut": "sorumluluk", "ters_mi": False},
+                {"id": "q4", "soru": "Stresli durumlarda çabuk paniğe kapılırım.", "boyut": "nevrotiklik", "ters_mi": True},
+                {"id": "q5", "soru": "Yeni fikirler ve deneyimler ilgimi çeker.", "boyut": "deneyime_aciklik", "ters_mi": False}
+            ]
+        }
+        
+        # Gelecekte eklenecek diğer testlerin yer tutucuları
+        kariyer_testi = {
+            "_id": "kariyer_riasec",
+            "kategori": "Meslek ve Kariyer Eğilimi",
+            "kategori_alt_baslik": "Hangi alanlar sana daha çok hitap ediyor?",
+            "kategori_ikon": "Briefcase",
+            "baslik": "RIASEC Kariyer Eğilimi",
+            "soru_sayisi": 30,
+            "sure_dk": 6,
+            "premium_mu": False,
+            "sorular": [] # Sonra dolduracağız
+        }
+
+        # Veritabanına kaydet
+        db.tests_collection.insert_many([kisilik_testi, kariyer_testi])
+        
+        return jsonify({"mesaj": "✅ Temizlik yapıldı ve Yeni Testler veritabanına başarıyla kuruldu!"}), 200
+    except Exception as e:
+        return jsonify({"hata": str(e)}), 500
+
+@app.route('/api/tests', methods=['GET'])
+def get_tests_list():
+    """Flutter'daki Vitrin sayfası için testleri listeler (Sorular hariç, hafif data)"""
+    try:
+        # Soruları Flutter'a yollamayarak internet tasarrufu yapıyoruz
+        testler = list(db.tests_collection.find({}, {"sorular": 0})) 
+        return jsonify(testler), 200
+    except Exception as e:
+        return jsonify({"hata": str(e)}), 500
+
+@app.route('/api/test/<test_id>/questions', methods=['GET'])
+def get_test_questions(test_id):
+    """Kullanıcı bir teste tıkladığında sadece o testin sorularını getirir"""
+    try:
+        test = db.tests_collection.find_one({"_id": test_id}, {"sorular": 1})
+        if test:
+            return jsonify({"test_id": test_id, "sorular": test.get("sorular", [])}), 200
+        return jsonify({"hata": "Test bulunamadı"}), 404
+    except Exception as e:
+        return jsonify({"hata": str(e)}), 500
+
+# ==========================================
 # SUNUCUYU ÇALIŞTIRAN KOD
 # ==========================================
 if __name__ == '__main__':
