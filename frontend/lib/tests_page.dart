@@ -1,160 +1,223 @@
 import 'package:flutter/material.dart';
-import 'test_engine_page.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'api_config.dart'; 
+import 'test_engine_page.dart'; 
 
-class TestsPage extends StatelessWidget {
-  const TestsPage({super.key});
+class TestsPage extends StatefulWidget {
+  const TestsPage({Key? key}) : super(key: key);
+
+  @override
+  _TestsPageState createState() => _TestsPageState();
+}
+
+class _TestsPageState extends State<TestsPage> {
+  bool _isLoading = true;
+  List<dynamic> _testList = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _testleriGetir();
+  }
+
+  // 1. API'DEN TESTLERİ ÇEKEN FONKSİYON
+  Future<void> _testleriGetir() async {
+    try {
+      final url = Uri.parse('${ApiConfig.baseUrl}/api/tests');
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        setState(() {
+          _testList = json.decode(utf8.decode(response.bodyBytes));
+          _isLoading = false;
+        });
+      } else {
+        _hataGoster("Sunucu hatası: ${response.statusCode}");
+      }
+    } catch (e) {
+      _hataGoster("Bağlantı hatası: $e");
+    }
+  }
+
+  void _hataGoster(String mesaj) {
+    setState(() => _isLoading = false);
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(mesaj)));
+  }
+
+  IconData _ikonSec(String iconName) {
+    switch (iconName) {
+      case 'Brain': return Icons.psychology;
+      case 'Briefcase': return Icons.work_outline;
+      case 'Languages': return Icons.language;
+      case 'Lock': return Icons.lock_outline;
+      default: return Icons.assignment;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    Map<String, List<dynamic>> grupluTestler = {};
+    for (var test in _testList) {
+      String kategori = test['kategori'] ?? 'Diğer';
+      if (!grupluTestler.containsKey(kategori)) {
+        grupluTestler[kategori] = [];
+      }
+      grupluTestler[kategori]!.add(test);
+    }
+
     return Scaffold(
+      backgroundColor: const Color(0xFF09090B), 
       appBar: AppBar(
-        title: const Text("Kariyer Testleri", style: TextStyle(fontWeight: FontWeight.bold)),
-        centerTitle: true,
+        title: const Text('Kariyer Testleri', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+        backgroundColor: const Color(0xFF1C1C1E),
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          const Text(
-            "Yapay zekanın seni tanıması ve kusursuz mesleği önermesi için aşağıdaki testleri tamamla.",
-            style: TextStyle(color: Colors.grey, fontSize: 14),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 25),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator(color: Colors.deepPurpleAccent))
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "Yapay zekanın seni tanıması ve kusursuz mesleği önermesi için testleri tamamla.",
+                    style: TextStyle(color: Colors.grey, fontSize: 14, height: 1.5),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
 
-          // 1. Kişilik Envanteri
-          _buildTestCard(context, "Kişilik Envanteri", "Karakterin hangi mesleklere uygun?", Icons.psychology, Colors.orange, () {
-            List<Map<String, dynamic>> kisilikSorulari = [
-              {
-                'questionText': 'Boş zamanlarında hangisini yapmayı tercih edersin?',
-                'answers': [
-                  {'text': 'Arkadaşlarımla kalabalık bir ortama girmeyi', 'trait': 'Sosyal'},
-                  {'text': 'Sessiz bir odada kitap okumayı veya kod yazmayı', 'trait': 'Analitik'},
-                  {'text': 'Doğada yürüyüş yapmayı', 'trait': 'Fiziksel'},
-                ]
-              },
-              {
-                'questionText': 'Bir problemle karşılaştığında ilk tepkin ne olur?',
-                'answers': [
-                  {'text': 'Hemen detaylıca araştırır, mantıklı bir plan çizerim', 'trait': 'Analitik'},
-                  {'text': 'Başkalarına danışır, ortak bir fikir ararım', 'trait': 'Sosyal'},
-                ]
-              }
-            ];
-            Navigator.push(context, MaterialPageRoute(builder: (context) => TestEnginePage(testTitle: "Kişilik Envanteri", questions: kisilikSorulari)));
-          }),
-          
-          // 2. Meslek Seçimi Testi
-          _buildTestCard(context, "Meslek Seçimi", "Hangi alanlar sana hitap ediyor?", Icons.work, Colors.blue, () {
-            List<Map<String, dynamic>> meslekSorulari = [
-              {
-                'questionText': 'Hangi konularda bir şeyler izlemek/okumak daha çok ilgini çeker?',
-                'answers': [
-                  {'text': 'Yeni teknolojiler, yapay zeka ve yazılım', 'trait': 'Teknoloji'},
-                  {'text': 'İnsan anatomisi, sağlık ve psikoloji', 'trait': 'Sağlık'},
-                  {'text': 'Tasarım, çizim ve sanatsal içerikler', 'trait': 'Sanat'},
-                ]
-              },
-              {
-                'questionText': 'Lisedeyken en sevdiğin ders hangisiydi?',
-                'answers': [
-                  {'text': 'Matematik / Fizik', 'trait': 'Mühendislik'},
-                  {'text': 'Edebiyat / Tarih', 'trait': 'Sosyal Bilimler'},
-                ]
-              }
-            ];
-            Navigator.push(context, MaterialPageRoute(builder: (context) => TestEnginePage(testTitle: "Meslek Seçimi", questions: meslekSorulari)));
-          }),
-          
-          // 3. İngilizce Seviyesi
-          _buildTestCard(context, "İngilizce Seviyesi", "A1'den C1'e gramer ve kelime ölçümü", Icons.translate, Colors.green, () {
-            List<Map<String, dynamic>> ingilizceSorulari = [
-              {
-                'questionText': 'Boşluğu doldur: "I ___ to the cinema yesterday."',
-                'answers': [
-                  {'text': 'go', 'trait': 'A1'},
-                  {'text': 'went', 'trait': 'A2'},
-                  {'text': 'gone', 'trait': 'Hatalı'},
-                ]
-              },
-              {
-                'questionText': '"Accomplish" kelimesinin eş anlamlısı nedir?',
-                'answers': [
-                  {'text': 'Achieve', 'trait': 'B2'},
-                  {'text': 'Fail', 'trait': 'A1'},
-                ]
-              }
-            ];
-            Navigator.push(context, MaterialPageRoute(builder: (context) => TestEnginePage(testTitle: "İngilizce Seviyesi", questions: ingilizceSorulari)));
-          }),
-          
-          // 4. Liderlik Potansiyeli
-          _buildTestCard(context, "Liderlik Potansiyeli", "Yönetici ruhuna sahip misin?", Icons.groups, Colors.red, () {
-            List<Map<String, dynamic>> liderlikSorulari = [
-              {
-                'questionText': 'Ekip arkadaşın projede büyük bir hata yaparsa ne yaparsın?',
-                'answers': [
-                  {'text': 'Kızarım ve hatayı tek başına düzeltmesini söylerim', 'trait': 'Düşük Liderlik'},
-                  {'text': 'Hatayı birlikte inceler, nasıl çözeceğimizi planlarız', 'trait': 'Yüksek Liderlik'},
-                ]
-              }
-            ];
-            Navigator.push(context, MaterialPageRoute(builder: (context) => TestEnginePage(testTitle: "Liderlik Potansiyeli", questions: liderlikSorulari)));
-          }),
+                  ...grupluTestler.entries.map((grup) {
+                    final kategoriAdi = grup.key;
+                    final testler = grup.value;
+                    final altBaslik = testler.first['kategori_alt_baslik'] ?? '';
+                    final iconStr = testler.first['kategori_ikon'] ?? '';
+                    final premiumMu = testler.first['premium_mu'] ?? false;
 
-          // 5. Çalışma Ortamı
-          _buildTestCard(context, "Çalışma Ortamı ve Stili", "Masa başı mı, saha mı, uzaktan mı?", Icons.laptop_mac, Colors.teal, () {
-            List<Map<String, dynamic>> ortamSorulari = [
-              {
-                'questionText': 'Hayalindeki çalışma ortamı neresi?',
-                'answers': [
-                  {'text': 'Evimin rahatlığında, bilgisayar başında', 'trait': 'Uzaktan (Remote)'},
-                  {'text': 'Modern bir ofiste, takımımla yüz yüze', 'trait': 'Ofis'},
-                  {'text': 'Sürekli seyahat ederek veya sahada', 'trait': 'Saha'},
-                ]
-              }
-            ];
-            Navigator.push(context, MaterialPageRoute(builder: (context) => TestEnginePage(testTitle: "Çalışma Ortamı", questions: ortamSorulari)));
-          }),
-
-          // 6. Değerler ve Motivasyon
-          _buildTestCard(context, "Değerler ve Motivasyon", "Seni ne motive eder? Para, statü, fayda?", Icons.star, Colors.amber, () {
-            List<Map<String, dynamic>> motivasyonSorulari = [
-              {
-                'questionText': 'Bir işi kabul etmendeki EN ÖNEMLİ faktör nedir?',
-                'answers': [
-                  {'text': 'Çok yüksek bir maaş ve primler', 'trait': 'Maddi Odaklı'},
-                  {'text': 'Topluma ve insanlığa faydalı bir iş yapmak', 'trait': 'Fayda Odaklı'},
-                  {'text': 'Prestijli bir unvan ve saygınlık', 'trait': 'Statü Odaklı'},
-                ]
-              }
-            ];
-            Navigator.push(context, MaterialPageRoute(builder: (context) => TestEnginePage(testTitle: "Motivasyon", questions: motivasyonSorulari)));
-          }),
-        ],
-      ),
+                    // DÜZELTİLDİ: Fonksiyon adı artık Türkçe karaktersiz
+                    return _buildGenisleyenKart(kategoriAdi, altBaslik, iconStr, premiumMu, testler);
+                  }).toList(),
+                ],
+              ),
+            ),
     );
   }
 
-  // Gece Moduna Duyarlı Test Kartı Şablonu (GÜNCELLENDİ)
-  Widget _buildTestCard(BuildContext context, String title, String subtitle, IconData icon, Color iconColor, VoidCallback onTap) {
-    return Card(
-      elevation: 2,
-      margin: const EdgeInsets.only(bottom: 15),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(15),
-        leading: Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: iconColor.withAlpha(30), 
-            shape: BoxShape.circle
+  // DÜZELTİLDİ: "Genisleyen" olarak yazıldı
+  Widget _buildGenisleyenKart(String baslik, String altBaslik, String iconStr, bool premiumMu, List<dynamic> testler) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1C1C1E),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.grey.shade800.withOpacity(0.5)),
+      ),
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent), 
+        child: ExpansionTile(
+          initiallyExpanded: baslik.contains("Kişilik"), 
+          iconColor: Colors.white,
+          collapsedIconColor: Colors.grey,
+          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: premiumMu ? Colors.orange.withOpacity(0.2) : Colors.deepPurpleAccent.withOpacity(0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(_ikonSec(iconStr), color: premiumMu ? Colors.orange : Colors.deepPurpleAccent, size: 24),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(child: Text(baslik, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16))),
+                        if (premiumMu) 
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(color: Colors.orange.withOpacity(0.2), borderRadius: BorderRadius.circular(10)),
+                            child: const Text("5 JETON", style: TextStyle(color: Colors.orange, fontSize: 10, fontWeight: FontWeight.bold)),
+                          )
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(altBaslik, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                  ],
+                ),
+              ),
+            ],
           ),
-          child: Icon(icon, color: iconColor, size: 30),
+          
+          children: testler.map((test) {
+            return Container(
+              padding: const EdgeInsets.only(left: 32, right: 16, bottom: 16),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(width: 2, height: 40, color: Colors.grey.shade800, margin: const EdgeInsets.only(right: 16, top: 10)),
+                  
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF242426),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey.shade800.withOpacity(0.3)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(test['baslik'] ?? 'Test', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              const Icon(Icons.assignment_outlined, color: Colors.grey, size: 14),
+                              const SizedBox(width: 4),
+                              Text("${test['soru_sayisi']} Soru", style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                              const SizedBox(width: 16),
+                              const Icon(Icons.timer_outlined, color: Colors.grey, size: 14),
+                              const SizedBox(width: 4),
+                              Text("~${test['sure_dk']} dk", style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                // TODO: TestEnginePage hazır olunca bu yorumlar açılacak
+                                // Navigator.push(context, MaterialPageRoute(
+                                //   builder: (context) => TestEnginePage(testId: test['_id'], testBaslik: test['baslik']),
+                                // ));
+                                print("${test['baslik']} testine tıklandı!");
+                              },
+                              icon: const Icon(Icons.play_arrow, size: 16, color: Colors.white),
+                              label: const Text("Başla", style: TextStyle(color: Colors.white)),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.deepPurpleAccent,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                minimumSize: Size.zero,
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
+                            ),
+                          )
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
         ),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text(subtitle),
-        trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
-        onTap: onTap, // İŞTE SİHİR BURADA: Artık kendi özel fonksiyonumuzu çalıştıracak!
       ),
     );
   }

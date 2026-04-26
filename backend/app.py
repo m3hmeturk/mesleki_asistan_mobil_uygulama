@@ -600,50 +600,96 @@ def delete_cv():
 
 @app.route('/api/setup_tests', methods=['GET'])
 def setup_tests():
-    """
-    DİKKAT: Bu bir kurulum servisidir. 
-    Eski testleri silip, MongoDB'ye yeni profesyonel test yapısını otomatik kurar.
-    """
     try:
-        # ESKİ SİSTEM KALINTILARINI TEMİZLE
+        # ESKİ SİSTEMİ TEMİZLE
         db.tests_collection.drop() 
 
-        # YENİ TEST: Kişilik Envanteri (Şimdilik test amaçlı 5 soru)
-        kisilik_testi = {
-            "_id": "kisilik_big5",
-            "kategori": "Kişilik ve Karakter",
-            "kategori_alt_baslik": "Temel özelliklerini ve değerlerini keşfet",
-            "kategori_ikon": "Brain",
-            "baslik": "Kişilik Envanteri (Big Five)",
-            "soru_sayisi": 5, 
-            "sure_dk": 5,
-            "premium_mu": False,
-            "sorular": [
-                {"id": "q1", "soru": "Yeni insanlarla tanışmaktan keyif alırım.", "boyut": "disadonukluk", "ters_mi": False},
-                {"id": "q2", "soru": "Başkalarının duygularını kolayca anlarım.", "boyut": "uyumluluk", "ters_mi": False},
-                {"id": "q3", "soru": "İşlerimi her zaman planlı ve düzenli yaparım.", "boyut": "sorumluluk", "ters_mi": False},
-                {"id": "q4", "soru": "Stresli durumlarda çabuk paniğe kapılırım.", "boyut": "nevrotiklik", "ters_mi": True},
-                {"id": "q5", "soru": "Yeni fikirler ve deneyimler ilgimi çeker.", "boyut": "deneyime_aciklik", "ters_mi": False}
-            ]
-        }
-        
-        # Gelecekte eklenecek diğer testlerin yer tutucuları
-        kariyer_testi = {
-            "_id": "kariyer_riasec",
-            "kategori": "Meslek ve Kariyer Eğilimi",
-            "kategori_alt_baslik": "Hangi alanlar sana daha çok hitap ediyor?",
-            "kategori_ikon": "Briefcase",
-            "baslik": "RIASEC Kariyer Eğilimi",
-            "soru_sayisi": 30,
-            "sure_dk": 6,
-            "premium_mu": False,
-            "sorular": [] # Sonra dolduracağız
-        }
+        testler_listesi = [
+            # --- KATMAN 1: KENDİNİ TANI (Ücretsiz) ---
+            {
+                "_id": "kisilik_big5",
+                "kategori": "KATMAN 1: Kendini Tanı",
+                "kategori_alt_baslik": "Temel özelliklerini ve değerlerini keşfet",
+                "kategori_ikon": "Brain",
+                "baslik": "Kişilik Envanteri (IPIP Big Five)",
+                "soru_sayisi": 25, "sure_dk": 5, "premium_mu": False, "maliyet": 0,
+                "sorular": [
+                    {"id": "q1", "soru": "Yeni insanlarla tanışmaktan keyif alırım.", "boyut": "disadonukluk"},
+                    {"id": "q2", "soru": "İşlerimi her zaman planlı yaparım.", "boyut": "sorumluluk"}
+                    # Diğer 23 soru eklenecek...
+                ]
+            },
+            {
+                "_id": "degerler_schwartz",
+                "kategori": "KATMAN 1: Kendini Tanı",
+                "kategori_alt_baslik": "Seni neyin motive ettiğini anla",
+                "kategori_ikon": "Brain",
+                "baslik": "Değerler ve Motivasyon",
+                "soru_sayisi": 15, "sure_dk": 3, "premium_mu": False, "maliyet": 0,
+                "sorular": [{"id": "d1", "soru": "Başarı benim için çok önemlidir.", "boyut": "basari"}]
+            },
 
-        # Veritabanına kaydet
-        db.tests_collection.insert_many([kisilik_testi, kariyer_testi])
-        
-        return jsonify({"mesaj": "✅ Temizlik yapıldı ve Yeni Testler veritabanına başarıyla kuruldu!"}), 200
+            # --- KATMAN 2: BECERİLERİNİ KEŞFET (Ücretsiz) ---
+            {
+                "_id": "kariyer_riasec",
+                "kategori": "KATMAN 2: Becerilerini Keşfet",
+                "kategori_alt_baslik": "İlgi alanlarını mesleklerle eşleştir",
+                "kategori_ikon": "Briefcase",
+                "baslik": "Kariyer Eğilim (RIASEC)",
+                "soru_sayisi": 30, "sure_dk": 6, "premium_mu": False, "maliyet": 0,
+                "sorular": [{"id": "r1", "soru": "Elektronik cihazları tamir etmeyi severim.", "boyut": "gercekci"}]
+            },
+            {
+                "_id": "ingilizce_cefr",
+                "kategori": "KATMAN 2: Becerilerini Keşfet",
+                "kategori_alt_baslik": "Global yetkinliğini ölç",
+                "kategori_ikon": "Languages",
+                "baslik": "İngilizce Yeterlilik (CEFR)",
+                "soru_sayisi": 25, "sure_dk": 8, "premium_mu": False, "maliyet": 0,
+                "sorular": [{"id": "e1", "soru": "Aşağıdaki cümlede boşluğu doldurun...", "boyut": "grammar"}]
+            },
+            {
+                "_id": "dijital_yetkinlik",
+                "kategori": "KATMAN 2: Becerilerini Keşfet",
+                "kategori_alt_baslik": "21. Yüzyıl becerilerini test et",
+                "kategori_ikon": "Languages",
+                "baslik": "Dijital Yetkinlik",
+                "soru_sayisi": 20, "sure_dk": 4, "premium_mu": False, "maliyet": 0,
+                "sorular": [{"id": "dy1", "soru": "Veri okuryazarlığı seviyeniz nedir?", "boyut": "data"}]
+            },
+
+            # --- KATMAN 3: ÇALIŞMA STİLİN (5 Jeton) ---
+            {
+                "_id": "liderlik_belbin",
+                "kategori": "KATMAN 3: Çalışma Stilin",
+                "kategori_alt_baslik": "Ekip içindeki rolünü belirle",
+                "kategori_ikon": "Lock",
+                "baslik": "Liderlik & Takım Rolü",
+                "soru_sayisi": 15, "sure_dk": 3, "premium_mu": True, "maliyet": 5,
+                "sorular": [{"id": "l1", "soru": "Kriz anlarında sorumluluk alırım.", "boyut": "liderlik"}]
+            },
+            {
+                "_id": "calisma_ortami",
+                "kategori": "KATMAN 3: Çalışma Stilin",
+                "kategori_alt_baslik": "İdeal ofis düzenini keşfet",
+                "kategori_ikon": "Lock",
+                "baslik": "Çalışma Ortamı Tercihi",
+                "soru_sayisi": 10, "sure_dk": 2, "premium_mu": True, "maliyet": 5,
+                "sorular": [{"id": "co1", "soru": "Hibrit çalışmayı tercih ederim.", "boyut": "ortam"}]
+            },
+            {
+                "_id": "girisimcilik_potansiyeli",
+                "kategori": "KATMAN 3: Çalışma Stilin",
+                "kategori_alt_baslik": "Kendi işini kurma eğilimin",
+                "kategori_ikon": "Lock",
+                "baslik": "Girişimcilik Potansiyeli",
+                "soru_sayisi": 12, "sure_dk": 3, "premium_mu": True, "maliyet": 5,
+                "sorular": [{"id": "g1", "soru": "Risk almaktan çekinmem.", "boyut": "risk"}]
+            }
+        ]
+
+        db.tests_collection.insert_many(testler_listesi)
+        return jsonify({"mesaj": "✅ Tüm Katmanlar (1, 2, 3) başarıyla kuruldu!"}), 200
     except Exception as e:
         return jsonify({"hata": str(e)}), 500
 
