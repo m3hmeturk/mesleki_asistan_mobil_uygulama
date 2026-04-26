@@ -805,31 +805,55 @@ def get_test_questions(test_id):
 
 @app.route('/api/test/<test_id>/submit', methods=['POST'])
 def submit_test(test_id):
-    """Kullanıcının verdiği cevapları alır ve baskın karakteri/özelliği hesaplar."""
+    """Kullanıcının cevaplarını analiz eder ve veritabanına Kariyer DNA'sı olarak kaydeder."""
     try:
         data = request.json
-        cevaplar = data.get('cevaplar', {}) # Örn: {"q1": "Analitik", "q2": "Sosyal"}
+        cevaplar = data.get('cevaplar', {}) 
         
         if not cevaplar:
             return jsonify({"hata": "Hiç cevap gönderilmedi!"}), 400
 
-        # Frekans Analizi: Kullanıcı hangi "değer"den kaç tane seçti?
+        # Frekans Analizi (En çok hangi özellik seçilmiş?)
         sonuc_analizi = {}
         for soru_id, secilen_deger in cevaplar.items():
             sonuc_analizi[secilen_deger] = sonuc_analizi.get(secilen_deger, 0) + 1
             
-        # En çok seçilen (en yüksek puana sahip) özelliği bul (Örn: "Analitik")
         baskin_ozellik = max(sonuc_analizi, key=sonuc_analizi.get)
         
-        # TODO: İleride bu sonucu veritabanına ("Kullanıcılar" tablosuna) kaydedeceğiz.
-        # Şimdilik analizi anında Flutter'a geri fırlatıyoruz.
+        # 🌟 YENİ: SONUCU VERİTABANINA KAYDETME
+        kullanici_id = "demo_kullanici_1" # Şimdilik herkesi bu ID ile kaydediyoruz
+        
+        db.users_collection.update_one(
+            {"_id": kullanici_id},
+            {
+                "$set": {f"kariyer_dna.{test_id}": baskin_ozellik}, # Örn: kariyer_dna.kisilik_big5: "Analitik"
+                "$setOnInsert": {"kayit_tarihi": "2026-04"}
+            },
+            upsert=True # Kullanıcı yoksa yeni oluşturur
+        )
         
         return jsonify({
-            "mesaj": "✅ Test analizi tamamlandı!",
+            "mesaj": "✅ Test analizi tamamlandı ve hafızaya kaydedildi!",
             "baskin_ozellik": baskin_ozellik,
             "detayli_analiz": sonuc_analizi
         }), 200
         
+    except Exception as e:
+        return jsonify({"hata": str(e)}), 500
+
+# 🌟 YENİ: İLERLEME ÇUBUĞUNU DOLDURMAK İÇİN YAZILAN SERVİS
+@app.route('/api/user/progress', methods=['GET'])
+def get_progress():
+    """Kullanıcının bugüne kadar tamamladığı testlerin ID'lerini döndürür."""
+    try:
+        kullanici_id = "demo_kullanici_1"
+        user = db.users_collection.find_one({"_id": kullanici_id})
+        
+        tamamlananlar = []
+        if user and "kariyer_dna" in user:
+            tamamlananlar = list(user["kariyer_dna"].keys()) # Çözülen testlerin ID listesi
+            
+        return jsonify({"tamamlanan_testler": tamamlananlar}), 200
     except Exception as e:
         return jsonify({"hata": str(e)}), 500
 

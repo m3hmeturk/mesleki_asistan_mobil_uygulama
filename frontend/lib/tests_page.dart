@@ -4,6 +4,10 @@ import 'dart:convert';
 import 'api_config.dart'; 
 import 'test_engine_page.dart'; 
 
+bool _isLoading = true;
+List<dynamic> _testList = [];
+List<String> _tamamlananTestler = []; // YENİ EKLENEN
+
 class TestsPage extends StatefulWidget {
   const TestsPage({Key? key}) : super(key: key);
 
@@ -24,16 +28,25 @@ class _TestsPageState extends State<TestsPage> {
   // 1. API'DEN TESTLERİ ÇEKEN FONKSİYON
   Future<void> _testleriGetir() async {
     try {
+      // 1. Önce test listesini çek
       final url = Uri.parse('${ApiConfig.baseUrl}/api/tests');
       final response = await http.get(url);
 
-      if (response.statusCode == 200) {
+      // 2. Sonra kullanıcının tamamladığı testleri çek
+      final progressUrl = Uri.parse('${ApiConfig.baseUrl}/api/user/progress');
+      final progressResponse = await http.get(progressUrl);
+
+      if (response.statusCode == 200 && progressResponse.statusCode == 200) {
+        final progressData = json.decode(utf8.decode(progressResponse.bodyBytes));
+        
         setState(() {
           _testList = json.decode(utf8.decode(response.bodyBytes));
+          // Tamamlanan testlerin ID'lerini String listesine çeviriyoruz
+          _tamamlananTestler = List<String>.from(progressData['tamamlanan_testler'] ?? []);
           _isLoading = false;
         });
       } else {
-        _hataGoster("Sunucu hatası: ${response.statusCode}");
+        _hataGoster("Sunucu hatası oluştu.");
       }
     } catch (e) {
       _hataGoster("Bağlantı hatası: $e");
@@ -82,7 +95,7 @@ class _TestsPageState extends State<TestsPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // 1. DİNAMİK İLERLEME KARTI (Toplam test sayısını gönderiyoruz)
-                  _buildGenelIlerlemeKarti(_testList.length, 0), // 0 şimdilik tamamlanan test sayısı
+                  _buildGenelIlerlemeKarti(_testList.length, _tamamlananTestler.length),
                   const SizedBox(height: 24),
 
                   // DİKKAT: O aradaki çirkin yazıyı ve SizedBox'ı TAMAMEN SİLDİK! 🗑️
