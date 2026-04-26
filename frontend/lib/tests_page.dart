@@ -295,11 +295,19 @@ class _TestsPageState extends State<TestsPage> {
                             alignment: Alignment.centerRight,
                             child: ElevatedButton.icon(
                               onPressed: () {
-                                // TODO: TestEnginePage hazır olunca bu yorumlar açılacak
-                                 Navigator.push(context, MaterialPageRoute(
-                                   builder: (context) => TestEnginePage(testId: test['_id'], testBaslik: test['baslik']),
-                                 ));
-                                print("${test['baslik']} testine tıklandı!");
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => TestEnginePage(
+                                      testId: test['_id'],
+                                      testBaslik: test['baslik'],
+                                    ),
+                                  ),
+                                ).then((_) {
+                                  // 🌟 SİHİR BURADA: Kullanıcı testten geri döndüğü an 
+                                  // progress'i tekrar çekip sayfayı güncelliyoruz!
+                                  _testleriGetir();
+                                });
                               },
                               icon: const Icon(Icons.play_arrow, size: 16, color: Colors.white),
                               label: const Text("Başla", style: TextStyle(color: Colors.white)),

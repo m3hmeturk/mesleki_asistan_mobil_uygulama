@@ -10,6 +10,7 @@ import 'cv_history_page.dart';
 import 'api_config.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'ai_service.dart';
 
 File? _secilenFoto;
 
@@ -212,7 +213,10 @@ Future<void> _taslakYukle() async {
     final olusturulanDosyaAdi = "CV_$timestamp.pdf";
 
     try {
-      // 🚀 1. YENİ: JSON yerine Multipart (Çok Parçalı Form) İstek oluşturuyoruz
+      // 🚀 0. YENİ: YAPAY ZEKA İÇİN KARİYER DNA'SINI ÇEKİYORUZ!
+      String dnaContext = await AiService.getKariyerDNAContext();
+
+      // 🚀 1. JSON yerine Multipart (Çok Parçalı Form) İstek oluşturuyoruz
       var request = http.MultipartRequest('POST', url);
 
       // 🚀 2. Normal Metin Verilerini Ekliyoruz (request.fields)
@@ -221,6 +225,9 @@ Future<void> _taslakYukle() async {
       request.fields['cv_dili'] = _cvDili;
       request.fields['github_username'] = _githubController.text.trim();
       request.fields['dosya_adi'] = olusturulanDosyaAdi;
+      
+      // 🌟 YENİ: DNA bilgisini de sunucuya gönderiyoruz!
+      request.fields['dna_context'] = dnaContext; 
       
       // Bilgiler kısmını artık iç içe değil, doğrudan ekliyoruz
       request.fields['ad'] = _adController.text;

@@ -321,7 +321,6 @@ def generate_roadmap():
 template_env = Environment(loader=FileSystemLoader('templates'))
 
 @app.route('/api/generate_cv', methods=['POST'])
-@app.route('/api/generate_cv', methods=['POST'])
 def generate_cv():
     try:
         # ==========================================
@@ -331,6 +330,9 @@ def generate_cv():
         secilen_sablon = request.form.get('sablon_id', 'klasik')
         cv_dili = request.form.get('cv_dili', 'Türkçe')
         github_username = request.form.get('github_username', '').strip()
+        
+        # 🌟 YENİ: Flutter'dan gelen Kariyer DNA'sını (Psikolojik Özellikleri) yakalıyoruz!
+        dna_context = request.form.get('dna_context', '').strip()
 
         # Flutter'dan form alanları olarak gelen bilgileri senin sözlüğüne paketliyoruz
         kisisel_bilgiler = {
@@ -423,6 +425,10 @@ def generate_cv():
         SADECE JSON FORMATINDA CEVAP VER:
         {{ "hakkimda": "...", "egitim": "...", "deneyim": "...", "yetenekler": "...", "projeler": "...", "diller": "..." }}
         """
+        
+        # 🌟 YENİ: EĞER KULLANICI KARİYER TESTİ ÇÖZDÜYSE, DNA'SINI PROMPT'A EKLİYORUZ!
+        if dnaContext:
+            ai_prompt += f"\n\n🚨 ÖNEMLİ PSİKOLOJİK PROFİL (Kariyer DNA'sı): Kullanıcının çözdüğü kişilik testlerine göre baskın özellikleri şunlardır: {dnaContext}. Lütfen üreteceğin 'hakkimda' özetinde adayın bu karakteristik güçlerini ve çalışma stilini mutlaka vurgula! Adeta onu yıllardır tanıyan bir İK uzmanı gibi kişiselleştirilmiş bir dil kullan.\n"
         
         response = openai_client.chat.completions.create(
             model="gpt-4o-mini",
@@ -854,6 +860,34 @@ def get_progress():
             tamamlananlar = list(user["kariyer_dna"].keys()) # Çözülen testlerin ID listesi
             
         return jsonify({"tamamlanan_testler": tamamlananlar}), 200
+    except Exception as e:
+        return jsonify({"hata": str(e)}), 500
+
+# 🌟 YENİ: YAPAY ZEKA İÇİN KARİYER DNA ÖZETİ
+@app.route('/api/user/career_dna_summary', methods=['GET'])
+def get_career_dna_summary():
+    """Kullanıcının test sonuçlarını, Yapay Zeka'ya (Gemini) prompt olarak verilmek üzere metne çevirir."""
+    try:
+        kullanici_id = "demo_kullanici_1"
+        user = db.users_collection.find_one({"_id": kullanici_id})
+        
+        if not user or "kariyer_dna" not in user or not user["kariyer_dna"]:
+            return jsonify({"prompt_eklentisi": ""}), 200 # Test çözmediyse boş döner
+            
+        dna_verileri = user["kariyer_dna"]
+        
+        # Verileri yapay zekanın okuyacağı güzel bir Türkçe cümleye dönüştürüyoruz
+        ozellikler = []
+        for test_id, sonuc in dna_verileri.items():
+            ozellikler.append(f"{sonuc}")
+            
+        birlestirilmis_ozellikler = ", ".join(ozellikler)
+        
+        # Bu metin doğrudan Gemini'ye gidecek "Sistem Komutunun" (System Prompt) bir parçası olacak
+        ai_prompt_eklentisi = f"ÖNEMLİ PSİKOLOJİK PROFİL: Bu kullanıcının yapılan kariyer ve kişilik testleri sonucunda baskın özellikleri şunlardır: {birlestirilmis_ozellikler}. Lütfen üreteceğin CV'yi (Özgeçmişi) ve 'Hakkımda' yazısını bu karakter özelliklerini yansıtacak, profesyonel bir dille harmanlayarak yaz."
+        
+        return jsonify({"prompt_eklentisi": ai_prompt_eklentisi}), 200
+
     except Exception as e:
         return jsonify({"hata": str(e)}), 500
 

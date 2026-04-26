@@ -100,14 +100,16 @@ class _ChatPageState extends State<ChatPage> {
     _controller.clear();
 
     if (_isInterviewMode) {
-      // --- SENARYO 1: MÜLAKAT MODU (OpenAI API Kullanır) ---
+      // --- SENARYO 1: MÜLAKAT MODU ---
+      // BURASI ZATEN KUSURSUZ! Çünkü bir önceki adımda AiService.mulakatSohbet
+      // fonksiyonunun içine Kariyer DNA'sını çeken kodu zaten eklemiştik.
       try {
         List<Map<String, String>> history = _messages.map((m) => {
           "role": m["role"] == "user" ? "user" : "assistant",
           "content": m["text"] as String
         }).toList();
 
-        // 1. Yapay Zekadan mülakat sorusunu veya bitiş karnesini al
+        // Yapay Zekadan mülakat sorusunu veya bitiş karnesini al (DNA otomatik ekleniyor)
         String response = await AiService.mulakatSohbet(history, pozisyon: _secilenPozisyon);
 
         setState(() {
@@ -118,13 +120,13 @@ class _ChatPageState extends State<ChatPage> {
           });
         });
 
-        // 2. OYUNLAŞTIRMA: Eğer kullanıcı mülakatı bitirdiyse, bu karneyi backend'e gönder ve XP al!
+        // OYUNLAŞTIRMA: Eğer kullanıcı mülakatı bitirdiyse, bu karneyi backend'e gönder ve XP al!
         if (userMsg.toLowerCase().contains("mülakatı bitir")) {
           final user = FirebaseAuth.instance.currentUser;
           if (user != null) {
             try {
               final dbResponse = await http.post(
-                Uri.parse('${ApiConfig.baseUrl}/api/save_interview'), // DİKKAT: IP adresin güncel olmalı!
+                Uri.parse('${ApiConfig.baseUrl}/api/save_interview'),
                 headers: {"Content-Type": "application/json; charset=utf-8"},
                 body: jsonEncode({
                   "uid": user.uid,
@@ -163,12 +165,16 @@ class _ChatPageState extends State<ChatPage> {
         final user = FirebaseAuth.instance.currentUser;
         final uid = user?.uid ?? ""; 
 
+        // 🌟 YENİ EKLENEN: Normal sohbette de kullanıcının DNA'sını çekiyoruz!
+        String dnaContext = await AiService.getKariyerDNAContext();
+
         final response = await http.post(
           Uri.parse('${ApiConfig.baseUrl}/api/chat'), 
           headers: {"Content-Type": "application/json; charset=utf-8"},
           body: jsonEncode({
             "message": userMsg,
-            "uid": uid 
+            "uid": uid,
+            "dna_context": dnaContext // 🌟 YENİ EKLENEN: Flask'a DNA'yı da fısıldıyoruz!
           }),
         );
 
@@ -197,7 +203,6 @@ class _ChatPageState extends State<ChatPage> {
       _messages.add({"role": "ai", "text": errorText, "time": ""});
     });
   }
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
