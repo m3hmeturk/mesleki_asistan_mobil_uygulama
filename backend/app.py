@@ -494,23 +494,13 @@ def generate_cv():
         VERCEL_API_URL = "https://pdf-motoru.vercel.app/api/generate"
 
         try:
-            print("1. Vercel'e istek atılıyor...")
+            print("1. Vercel'e istek atılıyor...", flush=True)
             response = requests.post(VERCEL_API_URL, json={"html": html_content})
-            print(f"2. Vercel'den cevap geldi! Status Code: {response.status_code}")
+            print(f"2. Vercel'den cevap geldi! Status Code: {response.status_code}", flush=True)
 
             if response.status_code == 200:
-                print(f"3. PDF başarıyla üretildi! Boyut: {len(response.content)} bayt")
+                print(f"3. PDF başarıyla üretildi! Boyut: {len(response.content)} bayt", flush=True)
                 
-                # Test amaçlı DO sunucusuna da kaydedelim ki dosya boş mu görelim
-                import os
-                if not os.path.exists('generated_cvs'): 
-                    os.makedirs('generated_cvs')
-                
-                pdf_path = f"generated_cvs/{gelen_dosya_adi}" 
-                with open(pdf_path, "wb") as f:
-                    f.write(response.content)
-                
-                # Telefona fırlatıyoruz
                 pdf_data = io.BytesIO(response.content)
                 return send_file(
                     pdf_data, 
@@ -519,13 +509,12 @@ def generate_cv():
                     download_name=gelen_dosya_adi
                 )
             else:
-                print(f"HATA: Vercel'den 200 dönmedi. Gelen Cevap: {response.text}")
+                print(f"HATA: Vercel'den 200 dönmedi. Gelen Cevap: {response.text}", flush=True)
                 return jsonify({"error": "Vercel Hatası", "details": response.text}), 500
 
         except Exception as e:
-            print(f"KRİTİK HATA: Vercel'e hiç bağlanılamadı. Detay: {str(e)}")
+            print(f"KRİTİK HATA: Vercel'e hiç bağlanılamadı. Detay: {str(e)}", flush=True)
             return jsonify({"error": "Bağlantı Hatası", "details": str(e)}), 500
-
         # 6. JETON DÜŞME
         users_collection.update_one(
             {"uid": uid},
