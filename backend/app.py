@@ -489,7 +489,7 @@ def generate_cv():
         )
 
         # ==========================================
-        # 🚀 5. PDF'E DÖNÜŞTÜRME (YENİ: VERCEL CHROME MOTORU)
+        # 🚀 5. PDF'E DÖNÜŞTÜRME (VERCEL CHROME MOTORU)
         # ==========================================
         VERCEL_API_URL = "https://pdf-motoru.vercel.app/api/generate"
 
@@ -501,6 +501,25 @@ def generate_cv():
             if response.status_code == 200:
                 print(f"3. PDF başarıyla üretildi! Boyut: {len(response.content)} bayt", flush=True)
                 
+                # 🚀 6. JETON DÜŞME (Dosyayı göndermeden hemen önce)
+                users_collection.update_one(
+                    {"uid": uid},
+                    {"$inc": {"credits": -cv_maliyeti}}
+                )
+                print(f"🪙 JETON DÜŞÜLDÜ: {uid} | Harcanan: {cv_maliyeti}")
+
+                # 🚀 7. CV ARŞİVİNE KAYDET
+                cv_kaydi = {
+                    "uid": uid,
+                    "dosya_adi": gelen_dosya_adi, 
+                    "tarih": datetime.datetime.now(),
+                    "sablon": secilen_sablon,
+                    "dil": cv_dili,
+                    "hedef_meslek": kisisel_bilgiler.get('meslek', '')
+                }
+                db.cv_arsivi.insert_one(cv_kaydi)
+
+                # 🚀 8. ŞİMDİ DOSYAYI TESLİM ET
                 pdf_data = io.BytesIO(response.content)
                 return send_file(
                     pdf_data, 
@@ -515,28 +534,9 @@ def generate_cv():
         except Exception as e:
             print(f"KRİTİK HATA: Vercel'e hiç bağlanılamadı. Detay: {str(e)}", flush=True)
             return jsonify({"error": "Bağlantı Hatası", "details": str(e)}), 500
-        # 6. JETON DÜŞME
-        users_collection.update_one(
-            {"uid": uid},
-            {"$inc": {"credits": -cv_maliyeti}}
-        )
-        print(f"🪙 JETON DÜŞÜLDÜ: {uid} | Harcanan: {cv_maliyeti} | Kalan: {mevcut_kredi - cv_maliyeti}")
-        
-        # 7. CV ARŞİVİNE KAYDET
-        cv_kaydi = {
-            "uid": uid,
-            "dosya_adi": gelen_dosya_adi, 
-            "tarih": datetime.datetime.now(),
-            "sablon": secilen_sablon,
-            "dil": cv_dili,
-            "hedef_meslek": kisisel_bilgiler.get('meslek', '')
-        }
-        db.cv_arsivi.insert_one(cv_kaydi)
-
-        return send_file(pdf_path, as_attachment=True)
 
     except Exception as e:
-        print("❌ CV Üretim Hatası:", e)
+        print("❌ CV Üretim Genel Hatası:", e)
         return jsonify({"error": str(e)}), 500
     
 @app.route('/api/get_user', methods=['POST'])

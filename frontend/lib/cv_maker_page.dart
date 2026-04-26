@@ -256,22 +256,26 @@ Future<void> _taslakYukle() async {
         return; 
       }
 
-      // Başarılı durum (Senin yazdığın dosya kaydetme ve açma aynen duruyor)
       if (response.statusCode == 200) {
         final bytes = response.bodyBytes;
         final dir = await getApplicationDocumentsDirectory();
         
-        final file = File('${dir.path}/$olusturulanDosyaAdi');
+        // Güvenlik: Dosya adının sonuna zorla .pdf uzantısı ekliyoruz
+        String guvenliDosyaAdi = olusturulanDosyaAdi;
+        if (!guvenliDosyaAdi.toLowerCase().endsWith('.pdf')) {
+          guvenliDosyaAdi = '$guvenliDosyaAdi.pdf';
+        }
+        
+        final file = File('${dir.path}/$guvenliDosyaAdi');
         await file.writeAsBytes(bytes);
         
         // Bakiye güncelleniyor
         _bakiyeSorgula(); 
         
-        // Başarı diyaloğu dosya yolu ile çağrılıyor (Otomatik açma yok, butona basınca açılacak)
+        // Başarı diyaloğu dosya yolu ile çağrılıyor
         _basariDialogGoster(file.path);
         
       } else {
-        // Sunucu hatası durumunda hata fırlatan sigorta bloğumuz
         throw Exception('Sunucu Hatası: ${response.statusCode}');
       }
     } catch (e) {
@@ -463,9 +467,11 @@ Future<void> _taslakYukle() async {
             const Text("Profesyonel CV'niz başarıyla oluşturuldu.", textAlign: TextAlign.center),
             const SizedBox(height: 24),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () { 
                 Navigator.pop(context); // Önce diyaloğu kapat
-                OpenFilex.open(filePath); // 👈 SADECE BURAYA BASINCA PDF AÇILIR
+                
+                // Güvenlik: Telefona bunun kesinlikle bir PDF olduğunu söylüyoruz
+                OpenFilex.open(filePath, type: "application/pdf");
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green, 
