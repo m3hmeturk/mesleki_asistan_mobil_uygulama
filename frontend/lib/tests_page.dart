@@ -193,9 +193,9 @@ class _TestsPageState extends State<TestsPage> {
                             child: ElevatedButton.icon(
                               onPressed: () {
                                 // TODO: TestEnginePage hazır olunca bu yorumlar açılacak
-                                // Navigator.push(context, MaterialPageRoute(
-                                //   builder: (context) => TestEnginePage(testId: test['_id'], testBaslik: test['baslik']),
-                                // ));
+                                 Navigator.push(context, MaterialPageRoute(
+                                   builder: (context) => TestEnginePage(testId: test['_id'], testBaslik: test['baslik']),
+                                 ));
                                 print("${test['baslik']} testine tıklandı!");
                               },
                               icon: const Icon(Icons.play_arrow, size: 16, color: Colors.white),

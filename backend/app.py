@@ -600,8 +600,12 @@ def delete_cv():
 
 @app.route('/api/setup_tests', methods=['GET'])
 def setup_tests():
+    """
+    Kariyer DNA'sı 3 Katmanlı Test Sistemini MongoDB'ye kurar.
+    Tüm sorular metinsel (çoktan seçmeli) formatta düzenlenmiştir.
+    """
     try:
-        # ESKİ SİSTEMİ TEMİZLE
+        # ESKİ VERİLERİ TEMİZLE
         db.tests_collection.drop() 
 
         testler_listesi = [
@@ -609,24 +613,49 @@ def setup_tests():
             {
                 "_id": "kisilik_big5",
                 "kategori": "KATMAN 1: Kendini Tanı",
-                "kategori_alt_baslik": "Temel özelliklerini ve değerlerini keşfet",
+                "kategori_alt_baslik": "Temel özelliklerini ve karakterini keşfet",
                 "kategori_ikon": "Brain",
-                "baslik": "Kişilik Envanteri (IPIP Big Five)",
+                "baslik": "Kişilik Envanteri (Big Five)",
                 "soru_sayisi": 25, "sure_dk": 5, "premium_mu": False, "maliyet": 0,
                 "sorular": [
-                    {"id": "q1", "soru": "Yeni insanlarla tanışmaktan keyif alırım.", "boyut": "disadonukluk"},
-                    {"id": "q2", "soru": "İşlerimi her zaman planlı yaparım.", "boyut": "sorumluluk"}
-                    # Diğer 23 soru eklenecek...
+                    {
+                        "id": "q1", 
+                        "soru": "Boş zamanlarında hangisini yapmayı tercih edersin?", 
+                        "cevaplar": [
+                            {"metin": "Arkadaşlarımla kalabalık bir ortama girmeyi", "deger": "Dışadönük"},
+                            {"metin": "Sessiz bir odada kitap okumayı veya kod yazmayı", "deger": "Analitik"},
+                            {"metin": "Yeni bir şeyler tasarlamayı veya çizmeyi", "deger": "Yaratıcı"}
+                        ]
+                    },
+                    {
+                        "id": "q2", 
+                        "soru": "Bir grup çalışmasında genellikle hangi rolde olursun?", 
+                        "cevaplar": [
+                            {"metin": "Ekibi yönlendiren ve kararları veren", "deger": "Lider"},
+                            {"metin": "Verilen görevleri titizlikle tamamlayan", "deger": "Sorumluluk"},
+                            {"metin": "Fikirler üretip tartışmalara renk katan", "deger": "Açıklık"}
+                        ]
+                    }
                 ]
             },
             {
                 "_id": "degerler_schwartz",
                 "kategori": "KATMAN 1: Kendini Tanı",
-                "kategori_alt_baslik": "Seni neyin motive ettiğini anla",
+                "kategori_alt_baslik": "Seni hayatta neyin motive ettiğini anla",
                 "kategori_ikon": "Brain",
                 "baslik": "Değerler ve Motivasyon",
                 "soru_sayisi": 15, "sure_dk": 3, "premium_mu": False, "maliyet": 0,
-                "sorular": [{"id": "d1", "soru": "Başarı benim için çok önemlidir.", "boyut": "basari"}]
+                "sorular": [
+                    {
+                        "id": "d1", 
+                        "soru": "İş hayatında senin için hangisi daha önceliklidir?", 
+                        "cevaplar": [
+                            {"metin": "Yüksek bir kazanç ve maddi güvence", "deger": "Güç"},
+                            {"metin": "Topluma faydalı olmak ve insanlara yardım etmek", "deger": "İyilikseverlik"},
+                            {"metin": "Kendi kararlarımı alabileceğim bir özgürlük alanı", "deger": "Öz-yönetim"}
+                        ]
+                    }
+                ]
             },
 
             # --- KATMAN 2: BECERİLERİNİ KEŞFET (Ücretsiz) ---
@@ -637,59 +666,119 @@ def setup_tests():
                 "kategori_ikon": "Briefcase",
                 "baslik": "Kariyer Eğilim (RIASEC)",
                 "soru_sayisi": 30, "sure_dk": 6, "premium_mu": False, "maliyet": 0,
-                "sorular": [{"id": "r1", "soru": "Elektronik cihazları tamir etmeyi severim.", "boyut": "gercekci"}]
+                "sorular": [
+                    {
+                        "id": "r1", 
+                        "soru": "Aşağıdaki aktivitelerden hangisi sana daha çok keyif verir?", 
+                        "cevaplar": [
+                            {"metin": "Bozulan bir cihazı parçalarına ayırıp tamir etmek", "deger": "Gerçekçi (R)"},
+                            {"metin": "Karmaşık bir problemi verilerle analiz etmek", "deger": "Araştırmacı (I)"},
+                            {"metin": "İnsanlara bir şeyler öğretmek veya rehberlik etmek", "deger": "Sosyal (S)"}
+                        ]
+                    }
+                ]
             },
             {
                 "_id": "ingilizce_cefr",
                 "kategori": "KATMAN 2: Becerilerini Keşfet",
-                "kategori_alt_baslik": "Global yetkinliğini ölç",
+                "kategori_alt_baslik": "Global yetkinliğini ve seviyeni ölç",
                 "kategori_ikon": "Languages",
                 "baslik": "İngilizce Yeterlilik (CEFR)",
                 "soru_sayisi": 25, "sure_dk": 8, "premium_mu": False, "maliyet": 0,
-                "sorular": [{"id": "e1", "soru": "Aşağıdaki cümlede boşluğu doldurun...", "boyut": "grammar"}]
+                "sorular": [
+                    {
+                        "id": "e1", 
+                        "soru": "Boşluğu doldur: 'If I ___ you, I would take that offer.'", 
+                        "cevaplar": [
+                            {"metin": "was", "deger": "A2"},
+                            {"metin": "were", "deger": "B1/B2"},
+                            {"metin": "am", "deger": "Hatalı"}
+                        ]
+                    }
+                ]
             },
             {
                 "_id": "dijital_yetkinlik",
                 "kategori": "KATMAN 2: Becerilerini Keşfet",
-                "kategori_alt_baslik": "21. Yüzyıl becerilerini test et",
+                "kategori_alt_baslik": "Dijital dünyadaki gücünü test et",
                 "kategori_ikon": "Languages",
                 "baslik": "Dijital Yetkinlik",
                 "soru_sayisi": 20, "sure_dk": 4, "premium_mu": False, "maliyet": 0,
-                "sorular": [{"id": "dy1", "soru": "Veri okuryazarlığı seviyeniz nedir?", "boyut": "data"}]
+                "sorular": [
+                    {
+                        "id": "dy1", 
+                        "soru": "Bir yazılım hatasıyla karşılaştığında yaklaşımın ne olur?", 
+                        "cevaplar": [
+                            {"metin": "Hemen Google veya AI araçlarını kullanarak çözümü ararım", "deger": "Dijital Okuryazar"},
+                            {"metin": "Hata kodunu not eder ve bir uzmana danışırım", "deger": "Temel Seviye"},
+                            {"metin": "Kendi başıma deneme yanılma yoluyla çözmeye çalışırım", "deger": "Problem Çözücü"}
+                        ]
+                    }
+                ]
             },
 
             # --- KATMAN 3: ÇALIŞMA STİLİN (5 Jeton) ---
             {
                 "_id": "liderlik_belbin",
                 "kategori": "KATMAN 3: Çalışma Stilin",
-                "kategori_alt_baslik": "Ekip içindeki rolünü belirle",
+                "kategori_alt_baslik": "Ekip içindeki baskın rolünü belirle",
                 "kategori_ikon": "Lock",
                 "baslik": "Liderlik & Takım Rolü",
                 "soru_sayisi": 15, "sure_dk": 3, "premium_mu": True, "maliyet": 5,
-                "sorular": [{"id": "l1", "soru": "Kriz anlarında sorumluluk alırım.", "boyut": "liderlik"}]
+                "sorular": [
+                    {
+                        "id": "l1", 
+                        "soru": "Bir projede beklenmedik bir kriz çıktığında ne yaparsın?", 
+                        "cevaplar": [
+                            {"metin": "Soğukkanlılığımı korur ve ekibe görev dağılımı yaparım", "deger": "Koordinatör"},
+                            {"metin": "Hızlıca aksiyon alır ve sorunu doğrudan çözmeye odaklanırım", "deger": "Biçimlendirici"},
+                            {"metin": "Krizin nedenlerini araştırıp veri toplarım", "deger": "Gözlemci"}
+                        ]
+                    }
+                ]
             },
             {
                 "_id": "calisma_ortami",
                 "kategori": "KATMAN 3: Çalışma Stilin",
-                "kategori_alt_baslik": "İdeal ofis düzenini keşfet",
+                "kategori_alt_baslik": "Senin için en verimli çalışma modelini bul",
                 "kategori_ikon": "Lock",
                 "baslik": "Çalışma Ortamı Tercihi",
                 "soru_sayisi": 10, "sure_dk": 2, "premium_mu": True, "maliyet": 5,
-                "sorular": [{"id": "co1", "soru": "Hibrit çalışmayı tercih ederim.", "boyut": "ortam"}]
+                "sorular": [
+                    {
+                        "id": "co1", 
+                        "soru": "Günlük enerjini en çok hangisi artırır?", 
+                        "cevaplar": [
+                            {"metin": "Evimdeki sessiz ve düzenli çalışma köşem", "deger": "Uzaktan"},
+                            {"metin": "Ofisteki canlı ortam ve ekip arkadaşlarımla sohbet", "deger": "Ofis"},
+                            {"metin": "Haftanın bir kısmını evde, bir kısmını ofiste geçirmek", "deger": "Hibrit"}
+                        ]
+                    }
+                ]
             },
             {
                 "_id": "girisimcilik_potansiyeli",
                 "kategori": "KATMAN 3: Çalışma Stilin",
-                "kategori_alt_baslik": "Kendi işini kurma eğilimin",
+                "kategori_alt_baslik": "Kendi işini kurma ve risk alma eğilimin",
                 "kategori_ikon": "Lock",
                 "baslik": "Girişimcilik Potansiyeli",
                 "soru_sayisi": 12, "sure_dk": 3, "premium_mu": True, "maliyet": 5,
-                "sorular": [{"id": "g1", "soru": "Risk almaktan çekinmem.", "boyut": "risk"}]
+                "sorular": [
+                    {
+                        "id": "g1", 
+                        "soru": "Belirsizlik içeren bir iş fırsatı karşına çıksa ne yaparsın?", 
+                        "cevaplar": [
+                            {"metin": "Büyük resmi görür ve risk alarak üzerine giderim", "deger": "Girişimci"},
+                            {"metin": "Tüm detayları analiz etmeden adım atmam", "deger": "Temkinli"},
+                            {"metin": "Bunu bir yan proje olarak başlatıp sonuçları izlerim", "deger": "Stratejik"}
+                        ]
+                    }
+                ]
             }
         ]
 
         db.tests_collection.insert_many(testler_listesi)
-        return jsonify({"mesaj": "✅ Tüm Katmanlar (1, 2, 3) başarıyla kuruldu!"}), 200
+        return jsonify({"mesaj": "✅ Kariyer DNA'sı 3 Katmanlı Sistem Başarıyla Kuruldu!"}), 200
     except Exception as e:
         return jsonify({"hata": str(e)}), 500
 
