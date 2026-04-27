@@ -789,15 +789,20 @@ def setup_tests():
         return jsonify({"hata": str(e)}), 500
 
 @app.route('/api/tests', methods=['GET'])
-def get_tests_list():
-    """Flutter'daki Vitrin sayfası için testleri listeler (Sorular hariç, hafif data)"""
+def get_tests():
+    """Veritabanındaki tüm testleri sorularıyla birlikte döndürür."""
     try:
-        # Soruları Flutter'a yollamayarak internet tasarrufu yapıyoruz
-        testler = list(db.tests_collection.find({}, {"sorular": 0})) 
+        # tests_collection'daki her şeyi çekiyoruz
+        testler = list(db.tests_collection.find())
+        
+        # MongoDB'nin özel 'ObjectId' yapısını Flutter'ın anlayacağı stringe çeviriyoruz
+        for test in testler:
+            test['_id'] = str(test['_id'])
+            
         return jsonify(testler), 200
     except Exception as e:
         return jsonify({"hata": str(e)}), 500
-
+    
 @app.route('/api/test/<test_id>/questions', methods=['GET'])
 def get_test_questions(test_id):
     """Kullanıcı bir teste tıkladığında sadece o testin sorularını getirir"""
