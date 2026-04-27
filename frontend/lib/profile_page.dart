@@ -205,11 +205,15 @@ class _ProfilePageState extends State<ProfilePage> {
                   child: Row(
                     children: [
                       // 🌟 FOTOĞRAF KISMI (Eğer Base64 varsa göster, yoksa baş harf göster)
+                      // 🌟 FOTOĞRAF KISMI (Firebase Storage Linki ile çalışır)
                       CircleAvatar(
                         radius: 35,
                         backgroundColor: theme.colorScheme.primary.withOpacity(0.15),
-                        backgroundImage: _base64Foto.isNotEmpty ? MemoryImage(base64Decode(_base64Foto)) : null,
-                        child: _base64Foto.isEmpty 
+                        // Eğer gelen veri "http" ile başlıyorsa (yani bir linkse) onu internetten çek
+                        backgroundImage: _base64Foto.startsWith('http') 
+                            ? NetworkImage(_base64Foto) 
+                            : null,
+                        child: !_base64Foto.startsWith('http') 
                             ? Text(
                                 gosterilecekAd.isNotEmpty ? gosterilecekAd[0] : "K",
                                 style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),

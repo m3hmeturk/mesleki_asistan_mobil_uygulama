@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'api_config.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart'; // 🌟 YENİ
 
 class EditProfilePage extends StatefulWidget {
   final String currentName;
@@ -67,9 +68,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
     }
   }
 
-  // 🌟 GÜNCELLENDİ: Kaydederken kullanıcının gerçek UID'sini gönderiyoruz
+  // 🌟 GÜNCELLENDİ: Fotoğrafı Firebase Storage'a Yükleyip Link Alma
   Future<void> _kaydet() async {
-    // Firebase'den mevcut kullanıcıyı al
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Oturum bulunamadı!")));
@@ -83,25 +83,34 @@ class _EditProfilePageState extends State<EditProfilePage> {
     );
 
     try {
-      String base64Image = "";
+      String fotoUrl = ""; // Boş link ile başlıyoruz
+
+      // 🌟 EĞER GALERİDEN YENİ BİR FOTOĞRAF SEÇİLDİYSE:
       if (_image != null) {
-        final bytes = await _image!.readAsBytes();
-        base64Image = base64Encode(bytes);
+        // 1. Firebase Storage'da bu kullanıcıya özel bir dosya yolu oluştur
+        final storageRef = FirebaseStorage.instance.ref().child('profil_fotograflari/${user.uid}.jpg');
+        
+        // 2. Fotoğrafı depoya fırlat
+        await storageRef.putFile(_image!);
+        
+        // 3. Yüklenen fotoğrafın internet linkini (URL) al
+        fotoUrl = await storageRef.getDownloadURL();
       }
 
+      // 🌟 MONGODB'YE KOCA FOTOĞRAFI DEĞİL, SADECE LİNKİ GÖNDER
       final url = Uri.parse('${ApiConfig.baseUrl}/api/user/update_profile');
       await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
-          'uid': user.uid, // 🌟 SİHİRLİ DOKUNUŞ: Sunucuya kim olduğumuzu söylüyoruz
+          'uid': user.uid,
           'ad_soyad': _nameController.text,
           'unvan': _titleController.text,
           'hakkimda': _bioController.text,
           'konum': _locationController.text,
           'kariyer_durumu': _selectedStatus ?? '',
           'linkedin': _linkedinController.text,
-          'profil_foto': base64Image 
+          'profil_foto': fotoUrl // 🚀 Sadece link gidiyor!
         }),
       );
       
