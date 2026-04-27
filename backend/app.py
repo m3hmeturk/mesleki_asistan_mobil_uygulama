@@ -212,7 +212,7 @@ def save_test():
         return jsonify({"status": "error", "message": str(e)}), 500
     
 # ==========================================
-# YENİ: PROFİL VE CÜZDAN (CÜZDAN BİLGİSİ VE RADAR VERİSİ)
+# 🌟 BİRLEŞTİRİLMİŞ: PROFİL, CÜZDAN VE RADAR VERİSİ
 # ==========================================
 @app.route('/api/get_profile', methods=['POST'])
 def get_profile():
@@ -221,21 +221,33 @@ def get_profile():
         uid = data.get('uid')
 
         if not uid:
-            return jsonify({"hata": "UID eksik"}), 400
+            return jsonify({"status": "error", "message": "UID eksik"}), 400
 
-        user_data = users_collection.find_one({"uid": uid})
+        # Kullanıcıyı Firebase UID'sine göre buluyoruz (Gerçek sistem)
+        user_data = db.users_collection.find_one({"uid": uid})
         if not user_data:
-            return jsonify({"hata": "Kullanıcı bulunamadı"}), 404
+            return jsonify({"status": "error", "message": "Kullanıcı bulunamadı"}), 404
 
-        # Sadece lazım olan temiz verileri gönderiyoruz
+        # 🌟 Hem cüzdan/radar hem de profil düzenleme verilerini TEK pakette birleştiriyoruz
         profile_data = {
+            # Eski Sistem (Cüzdan ve Radar)
             "ad": user_data.get("ad", "Kullanıcı"),
-            "credits": user_data.get("credits", 0), # Jeton Bakiyesi 🪙
+            "credits": user_data.get("credits", 0), 
             "skill_scores": user_data.get("skill_scores", {"teknik": 0, "iletisim": 0, "liderlik": 0, "analitik": 0, "sosyal": 0}),
-            "test_results": user_data.get("test_results", {})
+            "test_results": user_data.get("test_results", {}),
+            
+            # Yeni Sistem (Profil Sayfası ve Fotoğraf)
+            "ad_soyad": user_data.get("ad_soyad", ""),
+            "unvan": user_data.get("unvan", ""),
+            "hakkimda": user_data.get("hakkimda", ""),
+            "konum": user_data.get("konum", ""),
+            "kariyer_durumu": user_data.get("kariyer_durumu", ""),
+            "linkedin": user_data.get("linkedin", ""),
+            "profil_foto": user_data.get("profil_foto", "")
         }
 
-        print(f"💳 PROFİL ÇEKİLDİ: {profile_data['ad']} | Bakiye: {profile_data['credits']} Jeton")
+        print(f"💳 PROFİL ÇEKİLDİ: {profile_data.get('ad_soyad') or profile_data['ad']} | Bakiye: {profile_data['credits']} Jeton")
+        
         return jsonify({"status": "success", "data": profile_data}), 200
 
     except Exception as e:
@@ -795,30 +807,7 @@ def update_profile():
     except Exception as e:
         return jsonify({"hata": str(e)}), 500
 
-# 🌟 YENİ: PROFİL BİLGİLERİNİ GETİRME SERVİSİ
-@app.route('/api/user/profile', methods=['GET'])
-def get_profile():
-    """Kullanıcının MongoDB'de kayıtlı profil bilgilerini Flutter'a gönderir."""
-    try:
-        kullanici_id = "demo_kullanici_1" 
-        user = db.users_collection.find_one({"_id": kullanici_id})
-        
-        if user:
-            profil_verisi = {
-                "ad_soyad": user.get("ad_soyad", ""),
-                "unvan": user.get("unvan", ""),
-                "hakkimda": user.get("hakkimda", ""),
-                "konum": user.get("konum", ""),
-                "kariyer_durumu": user.get("kariyer_durumu", ""),
-                "linkedin": user.get("linkedin", ""),
-                "profil_foto": user.get("profil_foto", "") # Base64 formatında gelecek
-            }
-            return jsonify(profil_verisi), 200
-        else:
-            return jsonify({}), 200 # Kullanıcı yeniyse boş döner
-            
-    except Exception as e:
-        return jsonify({"hata": str(e)}), 500
+
 
 # ==========================================
 # SUNUCUYU ÇALIŞTIRAN KOD

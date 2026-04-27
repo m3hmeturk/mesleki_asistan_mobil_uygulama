@@ -34,24 +34,38 @@ class _ProfilePageState extends State<ProfilePage> {
     _profilBilgileriniGetir(); // Sayfa açıldığında verileri Python'dan çek
   }
 
-  // 🌟 YENİ: Python'dan profil bilgilerini çeken fonksiyon
+  // 🌟 GÜNCELLENDİ: Gerçek Firebase UID ile Profil Bilgilerini Çeken Fonksiyon
   Future<void> _profilBilgileriniGetir() async {
     try {
-      final url = Uri.parse('${ApiConfig.baseUrl}/api/user/profile');
-      final response = await http.get(url);
+      if (user == null) return; // Kullanıcı giriş yapmamışsa dur
+
+      final url = Uri.parse('${ApiConfig.baseUrl}/api/get_profile');
+      
+      // 🌟 Artık sadece GET yapmıyoruz, güvenli şekilde UID gönderiyoruz (POST)
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'uid': user!.uid}), 
+      );
 
       if (response.statusCode == 200) {
-        final data = json.decode(utf8.decode(response.bodyBytes));
-        setState(() {
-          String displayEmail = user?.email ?? "";
-          String defaultName = displayEmail.isNotEmpty ? displayEmail.split('@')[0].toUpperCase() : "Kullanıcı";
-          
-          _adSoyad = (data['ad_soyad'] != null && data['ad_soyad'] != "") ? data['ad_soyad'] : defaultName;
-          _unvan = (data['unvan'] != null && data['unvan'] != "") ? data['unvan'] : "Kariyer Unvanı Belirtilmemiş";
-          _base64Foto = data['profil_foto'] ?? "";
-          
-          _isLoading = false;
-        });
+        final parsedResponse = json.decode(utf8.decode(response.bodyBytes));
+        
+        // Sunucudan status: success geldiyse işlemleri yap
+        if (parsedResponse['status'] == 'success') {
+          final data = parsedResponse['data']; // Veriler artık 'data' objesinin içinde
+
+          setState(() {
+            String displayEmail = user?.email ?? "";
+            String defaultName = displayEmail.isNotEmpty ? displayEmail.split('@')[0].toUpperCase() : "Kullanıcı";
+            
+            _adSoyad = (data['ad_soyad'] != null && data['ad_soyad'] != "") ? data['ad_soyad'] : defaultName;
+            _unvan = (data['unvan'] != null && data['unvan'] != "") ? data['unvan'] : "Kariyer Unvanı Belirtilmemiş";
+            _base64Foto = data['profil_foto'] ?? "";
+            
+            _isLoading = false;
+          });
+        }
       } else {
         setState(() => _isLoading = false);
       }
