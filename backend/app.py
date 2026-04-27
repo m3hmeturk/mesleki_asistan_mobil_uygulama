@@ -768,6 +768,58 @@ def reset_career_dna():
     except Exception as e:
         return jsonify({"hata": str(e)}), 500
 
+# 🌟 YENİ: PROFİL BİLGİLERİNİ GÜNCELLEME (Genişletilmiş Versiyon)
+@app.route('/api/user/update_profile', methods=['POST'])
+def update_profile():
+    try:
+        data = request.json
+        kullanici_id = "demo_kullanici_1" 
+        
+        guncelleme = {
+            "ad_soyad": data.get("ad_soyad"),
+            "unvan": data.get("unvan"),
+            "hakkimda": data.get("hakkimda"),
+            "konum": data.get("konum"),
+            "kariyer_durumu": data.get("kariyer_durumu"),
+            "linkedin": data.get("linkedin"),
+            "profil_foto": data.get("profil_foto") 
+        }
+        
+        db.users_collection.update_one(
+            {"_id": kullanici_id},
+            {"$set": guncelleme},
+            upsert=True
+        )
+        
+        return jsonify({"mesaj": "✅ Profil detayları başarıyla güncellendi!"}), 200
+    except Exception as e:
+        return jsonify({"hata": str(e)}), 500
+
+# 🌟 YENİ: PROFİL BİLGİLERİNİ GETİRME SERVİSİ
+@app.route('/api/user/profile', methods=['GET'])
+def get_profile():
+    """Kullanıcının MongoDB'de kayıtlı profil bilgilerini Flutter'a gönderir."""
+    try:
+        kullanici_id = "demo_kullanici_1" 
+        user = db.users_collection.find_one({"_id": kullanici_id})
+        
+        if user:
+            profil_verisi = {
+                "ad_soyad": user.get("ad_soyad", ""),
+                "unvan": user.get("unvan", ""),
+                "hakkimda": user.get("hakkimda", ""),
+                "konum": user.get("konum", ""),
+                "kariyer_durumu": user.get("kariyer_durumu", ""),
+                "linkedin": user.get("linkedin", ""),
+                "profil_foto": user.get("profil_foto", "") # Base64 formatında gelecek
+            }
+            return jsonify(profil_verisi), 200
+        else:
+            return jsonify({}), 200 # Kullanıcı yeniyse boş döner
+            
+    except Exception as e:
+        return jsonify({"hata": str(e)}), 500
+
 # ==========================================
 # SUNUCUYU ÇALIŞTIRAN KOD
 # ==========================================
