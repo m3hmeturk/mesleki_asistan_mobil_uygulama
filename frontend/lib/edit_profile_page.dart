@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'api_config.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class EditProfilePage extends StatefulWidget {
   final String currentName;
@@ -66,8 +67,15 @@ class _EditProfilePageState extends State<EditProfilePage> {
     }
   }
 
-  // 🌟 GÜNCELLENDİ: Profil Güncelleme ve Fotoğrafı Base64'e Çevirme
+  // 🌟 GÜNCELLENDİ: Kaydederken kullanıcının gerçek UID'sini gönderiyoruz
   Future<void> _kaydet() async {
+    // Firebase'den mevcut kullanıcıyı al
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Oturum bulunamadı!")));
+      return;
+    }
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -75,26 +83,25 @@ class _EditProfilePageState extends State<EditProfilePage> {
     );
 
     try {
-      // 1. Eğer yeni bir fotoğraf seçildiyse onu Base64 metnine çeviriyoruz
       String base64Image = "";
       if (_image != null) {
         final bytes = await _image!.readAsBytes();
         base64Image = base64Encode(bytes);
       }
 
-      // 2. Verileri API'ye fırlat
       final url = Uri.parse('${ApiConfig.baseUrl}/api/user/update_profile');
       await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
+          'uid': user.uid, // 🌟 SİHİRLİ DOKUNUŞ: Sunucuya kim olduğumuzu söylüyoruz
           'ad_soyad': _nameController.text,
           'unvan': _titleController.text,
           'hakkimda': _bioController.text,
           'konum': _locationController.text,
           'kariyer_durumu': _selectedStatus ?? '',
           'linkedin': _linkedinController.text,
-          'profil_foto': base64Image // 🚀 Fotoğraf artık sunucuya gidiyor!
+          'profil_foto': base64Image 
         }),
       );
       

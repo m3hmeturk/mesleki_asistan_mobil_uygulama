@@ -780,12 +780,15 @@ def reset_career_dna():
     except Exception as e:
         return jsonify({"hata": str(e)}), 500
 
-# 🌟 YENİ: PROFİL BİLGİLERİNİ GÜNCELLEME (Genişletilmiş Versiyon)
+# 🌟 GÜNCELLENDİ: Gerçek UID ile Profil Kaydetme
 @app.route('/api/user/update_profile', methods=['POST'])
 def update_profile():
     try:
         data = request.json
-        kullanici_id = "demo_kullanici_1" 
+        uid = data.get("uid") # 🌟 Flutter'dan gelen gerçek UID'yi alıyoruz
+        
+        if not uid:
+            return jsonify({"status": "error", "message": "UID eksik"}), 400
         
         guncelleme = {
             "ad_soyad": data.get("ad_soyad"),
@@ -797,15 +800,17 @@ def update_profile():
             "profil_foto": data.get("profil_foto") 
         }
         
+        # 🌟 _id değil, gerçek uid'ye göre arayıp güncelliyoruz
         db.users_collection.update_one(
-            {"_id": kullanici_id},
+            {"uid": uid},
             {"$set": guncelleme},
             upsert=True
         )
         
-        return jsonify({"mesaj": "✅ Profil detayları başarıyla güncellendi!"}), 200
+        return jsonify({"status": "success", "message": "✅ Profil başarıyla güncellendi!"}), 200
     except Exception as e:
-        return jsonify({"hata": str(e)}), 500
+        print("❌ Profil Güncelleme Hatası:", e)
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 
 
