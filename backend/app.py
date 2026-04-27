@@ -747,6 +747,27 @@ def get_career_dna_summary():
     except Exception as e:
         return jsonify({"hata": str(e)}), 500
 
+# 🌟 YENİ: TÜM KARİYER DNA'SINI SIFIRLAMA SERVİSİ
+@app.route('/api/user/reset_dna', methods=['POST'])
+def reset_career_dna():
+    """Kullanıcının bugüne kadar çözdüğü tüm test sonuçlarını (Kariyer DNA'sını) kalıcı olarak siler."""
+    try:
+        kullanici_id = "demo_kullanici_1" # Şimdilik sabit kullanıcımız
+        
+        # $unset komutu, MongoDB'de o alanı (kariyer_dna) kökten silip atar.
+        sonuc = db.users_collection.update_one(
+            {"_id": kullanici_id},
+            {"$unset": {"kariyer_dna": ""}}
+        )
+        
+        if sonuc.modified_count > 0:
+            return jsonify({"mesaj": "✅ Kariyer DNA'sı başarıyla sıfırlandı. Tertemiz bir sayfa açıldı!"}), 200
+        else:
+            return jsonify({"mesaj": "Zaten sıfırlanmış veya silinecek bir veri yok."}), 200
+            
+    except Exception as e:
+        return jsonify({"hata": str(e)}), 500
+
 # ==========================================
 # SUNUCUYU ÇALIŞTIRAN KOD
 # ==========================================

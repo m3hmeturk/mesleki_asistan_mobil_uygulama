@@ -97,23 +97,45 @@ class _TestEnginePageState extends State<TestEnginePage> {
 
       if (response.statusCode == 200) {
         final data = json.decode(utf8.decode(response.bodyBytes));
-        final baskinOzellik = data['baskin_ozellik'] ?? 'Belirsiz';
+        final baskinMetin = data['baskin_ozellik'] ?? 'Belirsiz';
+        
+        // 🌟 YENİ: Python'dan gelen detaylı analizi (Yüzdelik listesini) alıyoruz
+        final Map<String, dynamic> detayliAnaliz = data['detayli_analiz'] ?? {};
+
+        // Harita verilerini listeleyip en yüksek 3 tanesini şık bir satıra çeviriyoruz
+        List<Widget> yetenekBarlari = [];
+        int sayac = 0;
+        detayliAnaliz.forEach((ozellik, yuzde) {
+          if (sayac < 3 && yuzde > 0 && ozellik != "Hatalı") { // En yüksek 3 özelliği göster
+            yetenekBarlari.add(
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(ozellik, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14)),
+                    Text("%$yuzde", style: const TextStyle(color: Colors.deepPurpleAccent, fontWeight: FontWeight.bold, fontSize: 14)),
+                  ],
+                ),
+              )
+            );
+            sayac++;
+          }
+        });
 
         // 4. Büyüleyici Sonuç Ekranını Göster
         showDialog(
           context: context,
           barrierDismissible: false,
           builder: (context) => AlertDialog(
-            // ❌ backgroundColor satırını tamamen sildik! Artık temaya göre otomatik renk alacak.
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20), 
               side: BorderSide(color: Colors.deepPurpleAccent.withOpacity(0.5))
             ),
             title: const Row(
               children: [
-                Icon(Icons.auto_awesome, color: Colors.deepPurpleAccent), // İkon mor kalabilir, iki modda da şık durur
+                Icon(Icons.auto_awesome, color: Colors.deepPurpleAccent),
                 SizedBox(width: 10),
-                // ❌ style içindeki "color: Colors.white," kısmını sildik! 
                 Text(
                   "Analiz Tamamlandı!", 
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)
@@ -124,21 +146,29 @@ class _TestEnginePageState extends State<TestEnginePage> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ❌ color: Colors.grey sildik, tema otomatik siyah/beyaz yapacak
                 const Text("Kariyer DNA'na yeni bir yapı taşı eklendi.", style: TextStyle(fontSize: 14)),
                 const SizedBox(height: 20),
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
-                  // Arka planın %10 mor olması iki temada da efsane durur, buraya dokunmuyoruz
                   decoration: BoxDecoration(color: Colors.deepPurpleAccent.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // ❌ color: Colors.grey sildik
                       const Text("Baskın Özelliğin", style: TextStyle(fontSize: 12)),
                       const SizedBox(height: 4),
-                      // ✅ Mor renk iki temada da çok şık durduğu için bu kalıyor!
-                      Text(baskinOzellik, style: const TextStyle(color: Colors.deepPurpleAccent, fontWeight: FontWeight.bold, fontSize: 22)),
+                      Text(baskinMetin, style: const TextStyle(color: Colors.deepPurpleAccent, fontWeight: FontWeight.bold, fontSize: 22)),
+                      
+                      // 🌟 YENİ: Alt alta 3'lü yüzdelik listesi
+                      if (yetenekBarlari.isNotEmpty) ...[
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 10.0),
+                          child: Divider(color: Colors.deepPurpleAccent, thickness: 0.5),
+                        ),
+                        const Text("Profil Dağılımın", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 8),
+                        ...yetenekBarlari, // Dinamik olarak eklediğimiz satırlar
+                      ]
                     ],
                   ),
                 ),
@@ -150,18 +180,18 @@ class _TestEnginePageState extends State<TestEnginePage> {
                   Navigator.pop(context); // Pop-up'ı kapat
                   Navigator.pop(context); // Test listesi sayfasına geri dön
                 },
-                // ❌ Buton yazısındaki beyaz rengi sildik, yerine mor verdik ki açık/koyu fark etmeksizin butona benzesin
                 child: const Text("Harika, Devam Et", style: TextStyle(color: Colors.deepPurpleAccent, fontWeight: FontWeight.bold)),
               )
             ],
           )
         );
       } else {
-        _hataGoster("Sonuçlar analiz edilemedi (Hata: ${response.statusCode})");
+        // ... (Hata gösterme kısımların aynı kalabilir)
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Sonuçlar analiz edilemedi!")));
       }
     } catch (e) {
-      if (mounted) Navigator.pop(context); // Hata olursa da yükleniyoru kapat
-      _hataGoster("Bağlantı hatası: $e");
+      if (mounted) Navigator.pop(context); 
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Bağlantı hatası: $e")));
     }
   }
 

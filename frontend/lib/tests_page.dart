@@ -4,9 +4,7 @@ import 'dart:convert';
 import 'api_config.dart'; 
 import 'test_engine_page.dart'; 
 
-bool _isLoading = true;
-List<dynamic> _testList = [];
-List<String> _tamamlananTestler = []; // YENİ EKLENEN
+// 🗑️ DÜZELTME: Buradaki gereksiz global değişkenler (kirlilik) tamamen silindi!
 
 class TestsPage extends StatefulWidget {
   const TestsPage({Key? key}) : super(key: key);
@@ -16,8 +14,10 @@ class TestsPage extends StatefulWidget {
 }
 
 class _TestsPageState extends State<TestsPage> {
+  // Değişkenler sadece ait oldukları yerde, yani State içinde!
   bool _isLoading = true;
   List<dynamic> _testList = [];
+  List<String> _tamamlananTestler = []; 
 
   @override
   void initState() {
@@ -64,6 +64,8 @@ class _TestsPageState extends State<TestsPage> {
       case 'Briefcase': return Icons.work_outline;
       case 'Languages': return Icons.language;
       case 'Lock': return Icons.lock_outline;
+      case 'Desktop': return Icons.desktop_windows; // Yeni eklenen testler için garanti
+      case 'Heart': return Icons.favorite_outline; // Yeni eklenen testler için garanti
       default: return Icons.assignment;
     }
   }
@@ -98,8 +100,6 @@ class _TestsPageState extends State<TestsPage> {
                   _buildGenelIlerlemeKarti(_testList.length, _tamamlananTestler.length),
                   const SizedBox(height: 24),
 
-                  // DİKKAT: O aradaki çirkin yazıyı ve SizedBox'ı TAMAMEN SİLDİK! 🗑️
-
                   // Mevcut Test Katmanları (Akordiyonlar)
                   ...grupluTestler.entries.map((grup) {
                     final kategoriAdi = grup.key;
@@ -113,7 +113,7 @@ class _TestsPageState extends State<TestsPage> {
 
                   const SizedBox(height: 16),
                   
-                  // 2. En Alttaki Bilgi/Motivasyon Afişi (Zaten amacımızı anlatıyor)
+                  // 2. En Alttaki Bilgi/Motivasyon Afişi
                   _buildBilgiAfisi(),
                   const SizedBox(height: 30),
                 ],
@@ -121,7 +121,6 @@ class _TestsPageState extends State<TestsPage> {
             ),
     );
   }
-  // --- YENİ EKLENEN TASARIM FONKSİYONLARI ---
 
   // --- DİNAMİKLEŞTİRİLMİŞ İLERLEME KARTI ---
   Widget _buildGenelIlerlemeKarti(int toplamTest, int tamamlananTest) {
@@ -207,7 +206,7 @@ class _TestsPageState extends State<TestsPage> {
       ),
     );
   }
-  // DÜZELTİLDİ: "Genisleyen" olarak yazıldı
+
   Widget _buildGenisleyenKart(String baslik, String altBaslik, String iconStr, bool premiumMu, List<dynamic> testler) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -219,7 +218,7 @@ class _TestsPageState extends State<TestsPage> {
       child: Theme(
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent), 
         child: ExpansionTile(
-          initiallyExpanded: baslik.contains("Kişilik"), 
+          initiallyExpanded: baslik.contains("Kişilik") || baslik.contains("KATMAN 1"), 
           iconColor: Colors.white,
           collapsedIconColor: Colors.grey,
           tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -259,11 +258,15 @@ class _TestsPageState extends State<TestsPage> {
           ),
           
           children: testler.map((test) {
+            // 🌟 YENİ ZEKA: Bu test daha önce tamamlanmış mı?
+            bool testTamamlandi = _tamamlananTestler.contains(test['_id']);
+
             return Container(
               padding: const EdgeInsets.only(left: 32, right: 16, bottom: 16),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Sol taraftaki ağaç çizgisi
                   Container(width: 2, height: 40, color: Colors.grey.shade800, margin: const EdgeInsets.only(right: 16, top: 10)),
                   
                   Expanded(
@@ -272,12 +275,34 @@ class _TestsPageState extends State<TestsPage> {
                       decoration: BoxDecoration(
                         color: const Color(0xFF242426),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.shade800.withOpacity(0.3)),
+                        // 🌟 DİNAMİK TASARIM: Tamamlanmışsa hafif yeşilimsi çerçeve
+                        border: Border.all(
+                          color: testTamamlandi 
+                              ? Colors.green.withOpacity(0.4) 
+                              : Colors.grey.shade800.withOpacity(0.3),
+                          width: testTamamlandi ? 1.5 : 1.0,
+                        ),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(test['baslik'] ?? 'Test', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(test['baslik'] ?? 'Test', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
+                              ),
+                              // 🌟 DİNAMİK ROZET: Çözüldüyse "Tamamlandı" yazısı
+                              if (testTamamlandi)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: Colors.green.withOpacity(0.15),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: const Text("✅ Tamamlandı", style: TextStyle(color: Colors.greenAccent, fontSize: 10, fontWeight: FontWeight.bold)),
+                                )
+                            ],
+                          ),
                           const SizedBox(height: 8),
                           Row(
                             children: [
@@ -304,15 +329,20 @@ class _TestsPageState extends State<TestsPage> {
                                     ),
                                   ),
                                 ).then((_) {
-                                  // 🌟 SİHİR BURADA: Kullanıcı testten geri döndüğü an 
-                                  // progress'i tekrar çekip sayfayı güncelliyoruz!
+                                  // Kullanıcı testten geri döndüğü an progress'i güncelliyoruz!
                                   _testleriGetir();
                                 });
                               },
-                              icon: const Icon(Icons.play_arrow, size: 16, color: Colors.white),
-                              label: const Text("Başla", style: TextStyle(color: Colors.white)),
+                              // 🌟 DİNAMİK BUTON: Çözüldüyse Refresh ikonu, çözülmediyse Play ikonu
+                              icon: Icon(
+                                testTamamlandi ? Icons.refresh : Icons.play_arrow, 
+                                size: 16, 
+                                color: Colors.white
+                              ),
+                              // 🌟 DİNAMİK YAZI VE RENK
+                              label: Text(testTamamlandi ? "Tekrar Çöz" : "Başla", style: const TextStyle(color: Colors.white)),
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.deepPurpleAccent,
+                                backgroundColor: testTamamlandi ? Colors.grey.shade700 : Colors.deepPurpleAccent,
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                 minimumSize: Size.zero,
