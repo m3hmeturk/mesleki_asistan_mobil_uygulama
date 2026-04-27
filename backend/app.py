@@ -629,7 +629,7 @@ def get_test_questions(test_id):
 
 @app.route('/api/test/<test_id>/submit', methods=['POST'])
 def submit_test(test_id):
-    """Kullanıcının cevaplarını analiz eder ve veritabanına Kariyer DNA'sı olarak kaydeder."""
+    """Kullanıcının cevaplarını analiz eder ve YÜZDELİK oranlarla Kariyer DNA'sı olarak kaydeder."""
     try:
         data = request.json
         cevaplar = data.get('cevaplar', {}) 
@@ -637,35 +637,62 @@ def submit_test(test_id):
         if not cevaplar:
             return jsonify({"hata": "Hiç cevap gönderilmedi!"}), 400
 
-        # Frekans Analizi (En çok hangi özellik seçilmiş?)
+        # 1. FREKANS ANALİZİ (Hangi şık kaç kere seçilmiş?)
         sonuc_analizi = {}
+        toplam_soru = len(cevaplar)
+
         for soru_id, secilen_deger in cevaplar.items():
             sonuc_analizi[secilen_deger] = sonuc_analizi.get(secilen_deger, 0) + 1
             
-        baskin_ozellik = max(sonuc_analizi, key=sonuc_analizi.get)
+        # 🚀 2. YÜZDELİK SKOR HESAPLAMA (HİBRİT SİSTEM)
+        yuzdelik_skorlar = {}
+        for ozellik, miktar in sonuc_analizi.items():
+            yuzde = int((miktar / toplam_soru) * 100)
+            yuzdelik_skorlar[ozellik] = yuzde
+
+        # Skorları büyükten küçüğe sıralayalım
+        sirali_skorlar = dict(sorted(yuzdelik_skorlar.items(), key=lambda item: item[1], reverse=True))
+
+        # 🛡️ "Hatalı" Seçeneği Filtresi (Özellikle İngilizce Testi için)
+        gecerli_skorlar = {k: v for k, v in sirali_skorlar.items() if k != "Hatalı"}
         
-        # 🌟 YENİ: SONUCU VERİTABANINA KAYDETME
-        kullanici_id = "demo_kullanici_1" # Şimdilik herkesi bu ID ile kaydediyoruz
+        if not gecerli_skorlar:
+            baskin_ozellik = "Temel Seviye" # Hepsi hatalıysa
+        else:
+            baskin_ozellik = list(gecerli_skorlar.keys())[0] # En yüksek geçerli skor
+
+        baskin_yuzde = sirali_skorlar.get(baskin_ozellik, 0)
+
+        # 3. VERİTABANINA KAYDEDİLECEK ZENGİN OBJE
+        kaydedilecek_veri = {
+            "baskin": baskin_ozellik,
+            "skorlar": sirali_skorlar
+        }
+        
+        kullanici_id = "demo_kullanici_1" 
         
         db.users_collection.update_one(
             {"_id": kullanici_id},
             {
-                "$set": {f"kariyer_dna.{test_id}": baskin_ozellik}, # Örn: kariyer_dna.kisilik_big5: "Analitik"
+                "$set": {f"kariyer_dna.{test_id}": kaydedilecek_veri}, # Artık sadece String değil, sözlük kaydediyoruz!
                 "$setOnInsert": {"kayit_tarihi": "2026-04"}
             },
-            upsert=True # Kullanıcı yoksa yeni oluşturur
+            upsert=True
         )
         
+        # Flutter'daki Pop-up'ta çok profesyonel görünmesi için: "%60 Analitik" formatında gönderiyoruz
+        flutter_gosterim = f"%{baskin_yuzde} {baskin_ozellik}"
+
         return jsonify({
-            "mesaj": "✅ Test analizi tamamlandı ve hafızaya kaydedildi!",
-            "baskin_ozellik": baskin_ozellik,
-            "detayli_analiz": sonuc_analizi
+            "mesaj": "✅ Test analizi tamamlandı ve yüzdelik olarak kaydedildi!",
+            "baskin_ozellik": flutter_gosterim,
+            "detayli_analiz": sirali_skorlar
         }), 200
         
     except Exception as e:
         return jsonify({"hata": str(e)}), 500
 
-# 🌟 YENİ: İLERLEME ÇUBUĞUNU DOLDURMAK İÇİN YAZILAN SERVİS
+
 @app.route('/api/user/progress', methods=['GET'])
 def get_progress():
     """Kullanıcının bugüne kadar tamamladığı testlerin ID'lerini döndürür."""
@@ -675,34 +702,45 @@ def get_progress():
         
         tamamlananlar = []
         if user and "kariyer_dna" in user:
-            tamamlananlar = list(user["kariyer_dna"].keys()) # Çözülen testlerin ID listesi
+            tamamlananlar = list(user["kariyer_dna"].keys()) 
             
         return jsonify({"tamamlanan_testler": tamamlananlar}), 200
     except Exception as e:
         return jsonify({"hata": str(e)}), 500
 
-# 🌟 YENİ: YAPAY ZEKA İÇİN KARİYER DNA ÖZETİ
+
 @app.route('/api/user/career_dna_summary', methods=['GET'])
 def get_career_dna_summary():
-    """Kullanıcının test sonuçlarını, Yapay Zeka'ya (Gemini) prompt olarak verilmek üzere metne çevirir."""
+    """Yapay Zeka (Gemini/OpenAI) için karmaşık Yüzdelik DNA'yı profesyonel bir Prompt'a çevirir."""
     try:
         kullanici_id = "demo_kullanici_1"
         user = db.users_collection.find_one({"_id": kullanici_id})
         
         if not user or "kariyer_dna" not in user or not user["kariyer_dna"]:
-            return jsonify({"prompt_eklentisi": ""}), 200 # Test çözmediyse boş döner
+            return jsonify({"prompt_eklentisi": ""}), 200 
             
         dna_verileri = user["kariyer_dna"]
         
-        # Verileri yapay zekanın okuyacağı güzel bir Türkçe cümleye dönüştürüyoruz
         ozellikler = []
         for test_id, sonuc in dna_verileri.items():
-            ozellikler.append(f"{sonuc}")
-            
-        birlestirilmis_ozellikler = ", ".join(ozellikler)
+            # Eski string verilerle (Hatalı vs.) yeni sözlük verileri çakışmasın diye kontrol:
+            if isinstance(sonuc, dict) and "baskin" in sonuc:
+                # Sadece 0'dan büyük olanları ve "Hatalı" olmayanları alıyoruz
+                skor_metni = ", ".join([f"%{v} {k}" for k, v in sonuc['skorlar'].items() if v > 0 and k != "Hatalı"])
+                ozellikler.append(f"[{test_id.upper()} -> Baskın: {sonuc['baskin']}, Dağılım: {skor_metni}]")
+            elif isinstance(sonuc, str):
+                ozellikler.append(f"[{test_id.upper()} -> {sonuc}]")
+                
+        birlestirilmis_ozellikler = " | ".join(ozellikler)
         
-        # Bu metin doğrudan Gemini'ye gidecek "Sistem Komutunun" (System Prompt) bir parçası olacak
-        ai_prompt_eklentisi = f"ÖNEMLİ PSİKOLOJİK PROFİL: Bu kullanıcının yapılan kariyer ve kişilik testleri sonucunda baskın özellikleri şunlardır: {birlestirilmis_ozellikler}. Lütfen üreteceğin CV'yi (Özgeçmişi) ve 'Hakkımda' yazısını bu karakter özelliklerini yansıtacak, profesyonel bir dille harmanlayarak yaz."
+        # 🚀 YENİ NESİL YAPAY ZEKA TALİMATI
+        ai_prompt_eklentisi = (
+            f"\n\n🚨 ÖNEMLİ PSİKOLOJİK PROFİL (Kariyer DNA'sı): "
+            f"Kullanıcının çözdüğü testlerin YÜZDELİK DNA dağılımı şöyledir: {birlestirilmis_ozellikler}. "
+            f"Lütfen üreteceğin 'Hakkımda' yazısında bu oranları çok iyi harmanla. "
+            f"Örneğin; %80 Liderlik varsa güçlü bir yönetici profili çiz, ancak %20 Yaratıcılık varsa bu ufak dokunuşu da göz ardı etme. "
+            f"Adeta onu yıllardır tanıyan bir mentor gibi, bu karakteristik verileri düz metne yedirerek profesyonelce vurgula."
+        )
         
         return jsonify({"prompt_eklentisi": ai_prompt_eklentisi}), 200
 

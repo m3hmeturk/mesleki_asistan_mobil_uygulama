@@ -12,245 +12,261 @@ if not MONGO_URI:
 
 try:
     client = MongoClient(MONGO_URI)
-    
-    # 2. DOĞRU DEPOYA BAĞLANTI (Senin asıl veritabanın)
     db = client["MeslekiAsistanDB"]
     tests_collection = db["tests_collection"]
 
-    # 3. ESKİ TESTLERİ TEMİZLE (Çakışma olmasın)
     tests_collection.delete_many({})
-    print("🧹 Eski test kalıntıları temizlendi. Yeni yapı kuruluyor...")
+    print("🧹 Eski veriler temizlendi. 160 Soruluk Devasa Veritabanı yükleniyor... Lütfen bekleyin.")
 
-    # 4. 3 KATMANLI YENİ NESİL TESTLER (Senaryo Bazlı)
+    # Ortak Kategori Değişkenleri (Kod kalabalığını önlemek için)
+    K1 = "KATMAN 1: Kendini Tanı"
+    K2 = "KATMAN 2: Becerilerini Keşfet"
+    K3 = "KATMAN 3: Çalışma Stilin"
+
     testler_listesi = [
-        # ==========================================
-        # --- KATMAN 1: KENDİNİ TANI (Ücretsiz) ---
-        # ==========================================
+        # =======================================================
+        # 1. KİŞİLİK ENVANTERİ (BIG 5) - 20 SORU
+        # =======================================================
         {
-            "_id": "kisilik_big5",
-            "kategori": "KATMAN 1: Kendini Tanı",
-            "kategori_alt_baslik": "Temel özelliklerini ve karakterini keşfet",
-            "kategori_ikon": "Brain",
-            "baslik": "Kişilik Envanteri (Big Five)",
-            "soru_sayisi": 3, "sure_dk": 5, "premium_mu": False, "maliyet": 0,
+            "_id": "kisilik_big5", "kategori": K1, "kategori_alt_baslik": "Karakterini ve sınırlarını keşfet", "kategori_ikon": "Brain",
+            "baslik": "Kişilik Envanteri (Big Five)", "soru_sayisi": 20, "sure_dk": 10, "premium_mu": False, "maliyet": 0,
             "sorular": [
-                {
-                    "id": "q1", 
-                    "soru": "Boş zamanlarında hangisini yapmayı tercih edersin?", 
-                    "cevaplar": [
-                        {"metin": "Arkadaşlarımla kalabalık bir ortama girmeyi", "deger": "Dışadönük"},
-                        {"metin": "Sessiz bir odada odaklanarak çalışmayı", "deger": "İçedönük"},
-                        {"metin": "Yeni bir şeyler tasarlamayı veya çizmeyi", "deger": "Yaratıcı"}
-                    ]
-                },
-                {
-                    "id": "q2", 
-                    "soru": "Bir projede çalışırken planlama tarzın nasıldır?", 
-                    "cevaplar": [
-                        {"metin": "Her adımı önceden detaylıca planlar ve takvime uyarım", "deger": "Sorumlu / Düzenli"},
-                        {"metin": "Genel bir fikirle başlar, yolda esnek değişiklikler yaparım", "deger": "Esnek / Uyumlu"},
-                        {"metin": "Son teslim tarihine kadar bekler, baskı altında hızlanırım", "deger": "Spontane"}
-                    ]
-                },
-                {
-                    "id": "q3", 
-                    "soru": "Bir arkadaşın sana dert yandığında ilk tepkin ne olur?", 
-                    "cevaplar": [
-                        {"metin": "Hemen mantıklı bir çözüm yolu üretmeye çalışırım", "deger": "Analitik"},
-                        {"metin": "Sadece dinler ve duygusal destek veririm", "deger": "Empatik"},
-                        {"metin": "Olayı farklı bir bakış açısıyla görmesini sağlarım", "deger": "Yönlendirici"}
-                    ]
-                }
-            ]
-        },
-        {
-            "_id": "degerler_schwartz",
-            "kategori": "KATMAN 1: Kendini Tanı",
-            "kategori_alt_baslik": "Seni hayatta neyin motive ettiğini anla",
-            "kategori_ikon": "Brain",
-            "baslik": "Değerler ve Motivasyon",
-            "soru_sayisi": 3, "sure_dk": 3, "premium_mu": False, "maliyet": 0,
-            "sorular": [
-                {
-                    "id": "d1", 
-                    "soru": "İş hayatında senin için hangisi daha önceliklidir?", 
-                    "cevaplar": [
-                        {"metin": "Yüksek bir kazanç ve maddi güvence", "deger": "Güç ve Başarı"},
-                        {"metin": "Topluma faydalı olmak ve insanlara yardım etmek", "deger": "İyilikseverlik"},
-                        {"metin": "Kendi kararlarımı alabileceğim bir özgürlük alanı", "deger": "Öz-yönetim"}
-                    ]
-                },
-                {
-                    "id": "d2", 
-                    "soru": "Yeni bir iş teklifi aldın. Seni en çok ne heyecanlandırır?", 
-                    "cevaplar": [
-                        {"metin": "Şirketin prestiji ve bana katacağı unvan", "deger": "Statü"},
-                        {"metin": "Projenin yenilikçi olması ve dünyayı değiştirme potansiyeli", "deger": "Evrenselcilik"},
-                        {"metin": "Çalışma saatlerinin rahatlığı ve iş-yaşam dengesi", "deger": "Güvenlik ve Konfor"}
-                    ]
-                },
-                {
-                    "id": "d3", 
-                    "soru": "Bir lideri senin gözünde başarılı kılan en önemli şey nedir?", 
-                    "cevaplar": [
-                        {"metin": "Koyduğu kurallarla sistemi kusursuz işletmesi", "deger": "Geleneksellik"},
-                        {"metin": "Ekibine ilham verip onları geliştirmesi", "deger": "İyilikseverlik"},
-                        {"metin": "Rakiplerini geride bırakıp zirveye çıkması", "deger": "Güç ve Başarı"}
-                    ]
-                }
+                {"id": "q1", "soru": "Yeni bir ortama girdiğinde nasıl davranırsın?", "cevaplar": [{"metin": "Hemen insanlarla tanışır ve sohbet başlatırım", "deger": "Dışadönük"}, {"metin": "Sessizce ortamı izler, birinin bana gelmesini beklerim", "deger": "İçedönük"}, {"metin": "Sadece ilgimi çeken bir-iki kişiyle konuşurum", "deger": "Seçici"}]},
+                {"id": "q2", "soru": "Bir projeye başlarken ilk adımın ne olur?", "cevaplar": [{"metin": "Detaylı bir plan, takvim ve yapılacaklar listesi hazırlarım", "deger": "Planlı/Sorumlu"}, {"metin": "Ana hedefi belirler, detayları yolda çözerim", "deger": "Esnek/Uyumlu"}, {"metin": "Doğrudan işe koyulur, ilham geldikçe ilerlerim", "deger": "Spontane"}]},
+                {"id": "q3", "soru": "Stresli bir kriz anında ilk tepkin nedir?", "cevaplar": [{"metin": "Soğukkanlı kalır, mantıklı bir çıkış yolu ararım", "deger": "Duygusal Dengeli"}, {"metin": "Endişelenir, duygusal bir tepki veririm", "deger": "Duyarlı/Hassas"}, {"metin": "Krizi bir meydan okuma olarak görür, liderliği alırım", "deger": "Baskın"}]},
+                {"id": "q4", "soru": "Eski ve çalışan bir sistem varken yeni bir yöntem önerilirse?", "cevaplar": [{"metin": "Harika! Yenilikleri denemek her zaman iyidir", "deger": "Yeniliğe Açık"}, {"metin": "Eski yöntemin nesinin eksik olduğunu sorgularım", "deger": "Analitik"}, {"metin": "Çalışıyorsa dokunmam, risk almayı sevmem", "deger": "Geleneksel"}]},
+                {"id": "q5", "soru": "Tartışmalarda senin için asıl önemli olan nedir?", "cevaplar": [{"metin": "Gerçeğin ortaya çıkması (kalpler kırılsa bile)", "deger": "Mantık Odaklı"}, {"metin": "Ortamın yumuşaması ve herkesin uzlaşması", "deger": "Uyumlu"}, {"metin": "Benim savunduğum fikrin kabul edilmesi", "deger": "İddialı"}]},
+                {"id": "q6", "soru": "Okuman gereken uzun bir rapor var, nasıl okursun?", "cevaplar": [{"metin": "Hiçbir detayı atlamadan kelime kelime okurum", "deger": "Detaycı"}, {"metin": "Başlıklara ve sonuç kısmına bakar, özet çıkarırım", "deger": "Büyük Resim Odaklı"}, {"metin": "Yapay zekaya özetletir veya birinden dinlerim", "deger": "Pratik"}]},
+                {"id": "q7", "soru": "Hobilerin genelde hangi alana yakındır?", "cevaplar": [{"metin": "Sanat, tasarım, yazarlık veya müzik", "deger": "Yaratıcı"}, {"metin": "Satranç, yazılım, teknoloji veya bulmaca", "deger": "Analitik"}, {"metin": "Doğa yürüyüşü, spor veya fiziksel aktiviteler", "deger": "Aktif"}]},
+                {"id": "q8", "soru": "Başkalarının duygularını anlama konusunda nasılsın?", "cevaplar": [{"metin": "Konuşmadan bile anlar, empati kurarım", "deger": "Yüksek Empati"}, {"metin": "Bana anlatırlarsa anlar ve çözüm üretirim", "deger": "Mantıksal Empati"}, {"metin": "Genelde kendi iç dünyama ve işime odaklıyımdır", "deger": "Bireysel"}]},
+                {"id": "q9", "soru": "Birden fazla iş (Multitasking) verildiğinde nasıl hissedersin?", "cevaplar": [{"metin": "Hepsini aynı anda yönetmek bana enerji verir", "deger": "Dinamik"}, {"metin": "Sıraya koyar, birini bitirmeden diğerine geçmem", "deger": "Odaklı"}, {"metin": "Baskı hissederim, tek bir işe derinleşmeyi severim", "deger": "Derin Çalışan"}]},
+                {"id": "q10", "soru": "Gelecek hakkında düşünürken ağırlıklı hissin nedir?", "cevaplar": [{"metin": "Büyük hayaller ve heyecan", "deger": "İyimser"}, {"metin": "Planlı adımlar ve net hedefler", "deger": "Gerçekçi"}, {"metin": "Riskleri hesaplama ve tedbir alma hissi", "deger": "Temkinli"}]},
+                {"id": "q11", "soru": "Ofiste bir eşyanın yeri değiştiğinde tepkin ne olur?", "cevaplar": [{"metin": "Hemen fark eder ve eski yerine koymak isterim", "deger": "Düzenli"}, {"metin": "Fark ederim ama çok umursamam", "deger": "Esnek"}, {"metin": "Büyük ihtimalle günlerce fark etmem", "deger": "Dalgın/Odaklı"}]},
+                {"id": "q12", "soru": "Hafta sonu planın iptal olursa ne yaparsın?", "cevaplar": [{"metin": "Hemen yeni bir plan yapar, arkadaşlarımla buluşurum", "deger": "Dışadönük"}, {"metin": "Harika! Evde yalnız kalıp dinlenmek için fırsat", "deger": "İçedönük"}, {"metin": "Yarım kalan projelerimi veya işlerimi tamamlarım", "deger": "Çalışkan"}]},
+                {"id": "q13", "soru": "Yeni bir teknolojik cihaz aldığında nasıl kurarsın?", "cevaplar": [{"metin": "Kullanım kılavuzunu baştan sona okuyarak", "deger": "Sistematik"}, {"metin": "Kılavuza bakmadan kurcalayarak, keşfederek", "deger": "Deneyimsel"}, {"metin": "Bilen birine kurdurur, sadece kullanıma odaklanırım", "deger": "Pragmatik"}]},
+                {"id": "q14", "soru": "Ekip arkadaşın hata yaptığında ona nasıl yaklaşırsın?", "cevaplar": [{"metin": "Hatayı yüzüne vurmadan, nazikçe düzeltmesini isterim", "deger": "Uyumlu"}, {"metin": "Doğrudan hatayı söyler ve nasıl çözeceğini gösteririm", "deger": "Net/Direkt"}, {"metin": "Onun yerine hatayı ben düzeltir, işi hızlandırırım", "deger": "Kurtarıcı/Hızlı"}]},
+                {"id": "q15", "soru": "Büyük bir başarı elde ettiğinde bunu nasıl kutlarsın?", "cevaplar": [{"metin": "Tüm çevremle, sosyal medyada büyük bir coşkuyla", "deger": "Dışa Dönük"}, {"metin": "Sadece ailem ve çok yakınlarımla sessizce", "deger": "Mütevazı"}, {"metin": "Kutlamam, hemen bir sonraki hedefe odaklanırım", "deger": "Hedef Odaklı"}]},
+                {"id": "q16", "soru": "Kuralların çok katı olduğu bir yerde çalışmak sana ne hissettirir?", "cevaplar": [{"metin": "Güvende hissederim, ne yapacağım bellidir", "deger": "Kurallara Bağlı"}, {"metin": "Boğulmuş hissederim, yaratıcılığım ölür", "deger": "Özgür Ruhlu"}, {"metin": "Kuralları kendi lehime nasıl esneteceğimi bulurum", "deger": "Stratejik"}]},
+                {"id": "q17", "soru": "Biri sana haksızlık yaptığında tepkin ne olur?", "cevaplar": [{"metin": "Hemen yüzleşir ve hakkımı sonuna kadar ararım", "deger": "Mücadeleci"}, {"metin": "İçime atar, ilişkimi sessizce keserim", "deger": "Çatışmadan Kaçınan"}, {"metin": "Durumu analiz eder, doğru zamanı bekleyip hamle yaparım", "deger": "Hesaplı"}]},
+                {"id": "q18", "soru": "Eşyaların ve çalışma masan nasıldır?", "cevaplar": [{"metin": "Her şeyin yeri bellidir, simetriktir", "deger": "Düzenli"}, {"metin": "Başkasına dağınık gelir ama ben aradığımı bulurum", "deger": "Kaotik Düzen"}, {"metin": "Çok dağınıktır, toplamaya üşenirim", "deger": "Rahat"}]},
+                {"id": "q19", "soru": "Bir karar alman gerektiğinde en çok neye güvenirsin?", "cevaplar": [{"metin": "İçgüdülerime ve o anki hislerime", "deger": "Sezgisel"}, {"metin": "Somut verilere, istatistiklere ve geçmiş tecrübelere", "deger": "Mantıksal"}, {"metin": "Güvendiğim insanların tavsiyelerine", "deger": "Danışan"}]},
+                {"id": "q20", "soru": "Hayat felsefeni hangisi daha iyi özetler?", "cevaplar": [{"metin": "Her gün yeni bir macera ve keşiftir", "deger": "Yenilikçi"}, {"metin": "Çok çalış, plan yap, zirveye ulaş", "deger": "Başarı Odaklı"}, {"metin": "İyi bir insan ol, huzurlu ve dengeli yaşa", "deger": "Huzur Odaklı"}]}
             ]
         },
 
-        # ==========================================
-        # --- KATMAN 2: BECERİLERİNİ KEŞFET (Ücretsiz) ---
-        # ==========================================
+        # =======================================================
+        # 2. DEĞERLER VE MOTİVASYON (SCHWARTZ) - 20 SORU
+        # =======================================================
         {
-            "_id": "kariyer_riasec",
-            "kategori": "KATMAN 2: Becerilerini Keşfet",
-            "kategori_alt_baslik": "İlgi alanlarını mesleklerle eşleştir",
-            "kategori_ikon": "Briefcase",
-            "baslik": "Meslek Seçimi (RIASEC)",
-            "soru_sayisi": 3, "sure_dk": 6, "premium_mu": False, "maliyet": 0,
+            "_id": "degerler_schwartz", "kategori": K1, "kategori_alt_baslik": "Seni hayatta neyin motive ettiğini anla", "kategori_ikon": "Heart",
+            "baslik": "Değerler ve Motivasyon", "soru_sayisi": 20, "sure_dk": 8, "premium_mu": False, "maliyet": 0,
             "sorular": [
-                {
-                    "id": "r1", 
-                    "soru": "Aşağıdaki aktivitelerden hangisi sana daha çok keyif verir?", 
-                    "cevaplar": [
-                        {"metin": "Bozulan bir cihazı parçalarına ayırıp tamir etmek", "deger": "Gerçekçi (R)"},
-                        {"metin": "Karmaşık bir problemi verilerle analiz etmek", "deger": "Araştırmacı (I)"},
-                        {"metin": "İnsanlara bir şeyler öğretmek veya rehberlik etmek", "deger": "Sosyal (S)"}
-                    ]
-                },
-                {
-                    "id": "r2", 
-                    "soru": "Bir şirkette çalışıyor olsan, hangi departmanda olmak istersin?", 
-                    "cevaplar": [
-                        {"metin": "Yeni bir pazarlama kampanyası tasarlayan yaratıcı ekipte", "deger": "Sanatçı (A)"},
-                        {"metin": "Bütçe tablolarını ve şirket verilerini düzenleyen finans ekibinde", "deger": "Geleneksel (C)"},
-                        {"metin": "Yeni müşteriler bağlayan ve şirketi temsil eden satış ekibinde", "deger": "Girişimci (E)"}
-                    ]
-                },
-                {
-                    "id": "r3", 
-                    "soru": "Hangi tarz bir belgesel veya video izlemek daha çok ilgini çeker?", 
-                    "cevaplar": [
-                        {"metin": "Evrenin sırları ve yapay zeka teknolojileri", "deger": "Araştırmacı (I)"},
-                        {"metin": "Tarihe yön veren liderlerin başarı hikayeleri", "deger": "Girişimci (E)"},
-                        {"metin": "Farklı kültürlerin sanat ve mimari yapıları", "deger": "Sanatçı (A)"}
-                    ]
-                }
-            ]
-        },
-        {
-            "_id": "dijital_yetkinlik",
-            "kategori": "KATMAN 2: Becerilerini Keşfet",
-            "kategori_alt_baslik": "Dijital dünyadaki gücünü test et",
-            "kategori_ikon": "Languages",
-            "baslik": "Dijital Yetkinlik",
-            "soru_sayisi": 3, "sure_dk": 4, "premium_mu": False, "maliyet": 0,
-            "sorular": [
-                {
-                    "id": "dy1", 
-                    "soru": "Bir yazılım hatasıyla veya bilmediğin bir programla karşılaştığında yaklaşımın ne olur?", 
-                    "cevaplar": [
-                        {"metin": "Hemen Google, forumlar veya AI araçlarını kullanarak çözümü ararım", "deger": "İleri Düzey"},
-                        {"metin": "Uyarı mesajını not eder ve anlayan birine danışırım", "deger": "Temel Seviye"},
-                        {"metin": "Bütün menüleri kurcalayarak deneme yanılma yoluyla çözerim", "deger": "Orta Düzey"}
-                    ]
-                },
-                {
-                    "id": "dy2", 
-                    "soru": "Bir sunum veya rapor hazırlaman gerektiğinde hangi araçları kullanırsın?", 
-                    "cevaplar": [
-                        {"metin": "Sadece Word veya standart PowerPoint kullanırım", "deger": "Temel Seviye"},
-                        {"metin": "Canva, Notion veya bulut tabanlı modern araçları tercih ederim", "deger": "İleri Düzey"},
-                        {"metin": "İçeriği yazarım, tasarımla uğraşmayı pek sevmem", "deger": "Geleneksel"}
-                    ]
-                },
-                {
-                    "id": "dy3", 
-                    "soru": "Yeni bir teknoloji trendi (Örn: ChatGPT, Web3) çıktığında tepkin ne olur?", 
-                    "cevaplar": [
-                        {"metin": "İlk deneyenlerden olur, günlük hayatıma nasıl entegre edeceğimi bulurum", "deger": "Yenilikçi (Erken Benimseyen)"},
-                        {"metin": "İnsanlar kullanıp faydasını kanıtladıktan sonra kullanmaya başlarım", "deger": "Pragmatik"},
-                        {"metin": "Mevcut düzenim çalışıyorsa yeni şeylere ihtiyaç duymam", "deger": "Geleneksel"}
-                    ]
-                }
+                {"id": "d1", "soru": "İş hayatında senin için hangisi daha önceliklidir?", "cevaplar": [{"metin": "Yüksek bir kazanç ve maddi güvence", "deger": "Güç"}, {"metin": "Topluma faydalı olmak ve insanlara yardım etmek", "deger": "İyilikseverlik"}, {"metin": "Kendi kararlarımı alabileceğim bir özgürlük", "deger": "Öz-yönetim"}]},
+                {"id": "d2", "soru": "Yeni bir iş teklifi aldın. Seni en çok ne heyecanlandırır?", "cevaplar": [{"metin": "Şirketin prestiji ve bana katacağı unvan", "deger": "Statü"}, {"metin": "Projenin yenilikçi olması ve dünyayı değiştirmesi", "deger": "Evrenselcilik"}, {"metin": "Çalışma saatlerinin rahatlığı ve iş-yaşam dengesi", "deger": "Güvenlik"}]},
+                {"id": "d3", "soru": "Başarılı bir lider sence nasıl olmalıdır?", "cevaplar": [{"metin": "Kurallarla sistemi kusursuz işleten", "deger": "Geleneksellik"}, {"metin": "Ekibine ilham verip onları geliştiren", "deger": "İyilikseverlik"}, {"metin": "Rakipleri ezip piyasaya hükmeden", "deger": "Güç"}]},
+                {"id": "d4", "soru": "Eline yüklü miktarda para geçse ilk ne yaparsın?", "cevaplar": [{"metin": "Geleceğim için sağlam yatırımlar yaparım", "deger": "Güvenlik"}, {"metin": "Dünyayı gezer, yeni maceralara atılırım", "deger": "Uyarılım"}, {"metin": "Bir kısmını bağışlar veya aileme dağıtırım", "deger": "İyilikseverlik"}]},
+                {"id": "d5", "soru": "Çalıştığın şirket çevreye zarar veriyor ama sana çok iyi maaş ödüyor. Ne yaparsın?", "cevaplar": [{"metin": "Umursamam, benim için kendi gelirim önemlidir", "deger": "Güç"}, {"metin": "Ahlaki olarak rahatsız olur, hemen işten ayrılırım", "deger": "Evrenselcilik"}, {"metin": "İçeriden sistemi düzeltmek için mücadele ederim", "deger": "Öz-yönetim"}]},
+                {"id": "d6", "soru": "Sence toplumun en çok neye ihtiyacı var?", "cevaplar": [{"metin": "Sıkı kurallara, düzene ve disipline", "deger": "Geleneksellik"}, {"metin": "Fikir özgürlüğüne ve yenilikçiliğe", "deger": "Öz-yönetim"}, {"metin": "Eşitliğe, adalete ve yardımlaşmaya", "deger": "Evrenselcilik"}]},
+                {"id": "d7", "soru": "Bir arkadaşın kuralları çiğnemeni istedi, kimse zarar görmeyecek. Ne yaparsın?", "cevaplar": [{"metin": "Kurallar çiğnenmek içindir, yaparım", "deger": "Hedonizm"}, {"metin": "Asla yapmam, prensiplerime aykırı", "deger": "Uyma (Conformity)"}, {"metin": "Arkadaşım için bir defalığına görmezden gelirim", "deger": "İyilikseverlik"}]},
+                {"id": "d8", "soru": "Tarihte nasıl anılmak istersin?", "cevaplar": [{"metin": "Büyük bir imparatorluk veya şirket kuran güçlü biri", "deger": "Güç"}, {"metin": "İnsanlığa faydalı bir buluş yapan bir bilim insanı", "deger": "Evrenselcilik"}, {"metin": "Ailesine ve dostlarına sadık, iyi bir insan", "deger": "İyilikseverlik"}]},
+                {"id": "d9", "soru": "Hayatındaki en büyük korkun nedir?", "cevaplar": [{"metin": "Fakir kalmak ve gücümü kaybetmek", "deger": "Güç"}, {"metin": "Özgürlüğümün kısıtlanması, hapse girmek", "deger": "Öz-yönetim"}, {"metin": "Sevdiklerime zarar gelmesi veya yalnız kalmak", "deger": "Güvenlik"}]},
+                {"id": "d10", "soru": "Sence sanatın asıl amacı nedir?", "cevaplar": [{"metin": "Toplumsal mesaj vermek ve farkındalık yaratmak", "deger": "Evrenselcilik"}, {"metin": "Estetik zevk vermek ve ruhu dinlendirmek", "deger": "Hedonizm"}, {"metin": "Sanatçının iç dünyasını özgürce yansıtması", "deger": "Öz-yönetim"}]},
+                {"id": "d11", "soru": "Çocuğuna vereceğin en önemli öğüt ne olurdu?", "cevaplar": [{"metin": "Her zaman büyük düşün ve zirveyi hedefle", "deger": "Başarı"}, {"metin": "Büyüklerine saygılı ol, geleneklerine sahip çık", "deger": "Geleneksellik"}, {"metin": "Kendi yolunu çiz ve kimseye boyun eğme", "deger": "Öz-yönetim"}]},
+                {"id": "d12", "soru": "Mükemmel bir hafta sonu senin için nasıldır?", "cevaplar": [{"metin": "Lüks bir mekanda kaliteli yemekler ve eğlence", "deger": "Hedonizm"}, {"metin": "Evde ailemle güvenli ve huzurlu bir akşam", "deger": "Güvenlik"}, {"metin": "Daha önce gitmediğim yabani bir doğada kamp yapmak", "deger": "Uyarılım"}]},
+                {"id": "d13", "soru": "İş yerinde terfi almak için ne yaparsın?", "cevaplar": [{"metin": "Rakiplerimi stratejik olarak alt etmenin yollarını ararım", "deger": "Güç"}, {"metin": "Sadece işimi en mükemmel şekilde yapıp fark edilmeyi beklerim", "deger": "Başarı"}, {"metin": "Yöneticilerimle ve kurallarla tam bir uyum içinde çalışırım", "deger": "Uyma"}]},
+                {"id": "d14", "soru": "Farklı kültürlerden insanlarla bir arada olmak sana ne hissettirir?", "cevaplar": [{"metin": "Çok heyecan verici, yeni şeyler öğrenirim", "deger": "Evrenselcilik"}, {"metin": "Güzel ama kendi kültürüme dönmeyi tercih ederim", "deger": "Geleneksellik"}, {"metin": "Onlarla ticari bir ağ (network) kurmaya odaklanırım", "deger": "Güç"}]},
+                {"id": "d15", "soru": "Bir sorunu çözerken hangi yolu izlersin?", "cevaplar": [{"metin": "Atalarımın veya eskilerin kanıtlanmış yöntemlerini", "deger": "Geleneksellik"}, {"metin": "Kendi geliştirdiğim tamamen orijinal bir yöntemi", "deger": "Öz-yönetim"}, {"metin": "Topluma en az zarar verecek en adil yöntemi", "deger": "Evrenselcilik"}]},
+                {"id": "d16", "soru": "Sence suçlulara nasıl davranılmalı?", "cevaplar": [{"metin": "Çok sert cezalandırılıp toplumdan izole edilmeli", "deger": "Güvenlik"}, {"metin": "Eğitilip topluma geri kazandırılmaya çalışılmalı", "deger": "Evrenselcilik"}, {"metin": "Sebep oldukları maddi/manevi zararı ödetilmeli", "deger": "Başarı/Adalet"}]},
+                {"id": "d17", "soru": "Hayatında bir değişiklik yapman gerektiğinde...", "cevaplar": [{"metin": "Hemen atlar, değişimin heyecanını yaşarım", "deger": "Uyarılım"}, {"metin": "Riskleri hesaplar, sadece garantiyse değişirim", "deger": "Güvenlik"}, {"metin": "Mevcut düzenimi korumak için direnirim", "deger": "Geleneksellik"}]},
+                {"id": "d18", "soru": "Eşyaların markası senin için önemli midir?", "cevaplar": [{"metin": "Evet, statümü ve kalitemi yansıtır", "deger": "Güç"}, {"metin": "Hayır, işlevsel ve uzun ömürlü olması yeterlidir", "deger": "Güvenlik"}, {"metin": "Doğa dostu ve adil üretim olması önemlidir", "deger": "Evrenselcilik"}]},
+                {"id": "d19", "soru": "Biri senden borç isterse tavrın ne olur?", "cevaplar": [{"metin": "Yakınım ise hiç düşünmeden veririm", "deger": "İyilikseverlik"}, {"metin": "Ne için kullanacağını sorgular, sözleşme yaparım", "deger": "Güvenlik"}, {"metin": "Banka değilim, prensip olarak borç vermem", "deger": "Başarı"}]},
+                {"id": "d20", "soru": "Sence bir insanın yaşayabileceği en büyük tatmin nedir?", "cevaplar": [{"metin": "Tüm arzularına ve bedensel zevklerine ulaşması", "deger": "Hedonizm"}, {"metin": "Kendi potansiyelini %100 gerçekleştirip bağımsız olması", "deger": "Öz-yönetim"}, {"metin": "Dünyada kendinden sonra yaşayacak iyi bir miras (eser) bırakması", "deger": "Evrenselcilik"}]}
             ]
         },
 
-        # ==========================================
-        # --- KATMAN 3: ÇALIŞMA STİLİN (5 Jeton) ---
-        # ==========================================
+        # =======================================================
+        # 3. MESLEK SEÇİMİ (RIASEC) - 20 SORU
+        # =======================================================
         {
-            "_id": "liderlik_belbin",
-            "kategori": "KATMAN 3: Çalışma Stilin",
-            "kategori_alt_baslik": "Ekip içindeki baskın rolünü belirle",
-            "kategori_ikon": "Lock",
-            "baslik": "Liderlik & Takım Rolü",
-            "soru_sayisi": 3, "sure_dk": 3, "premium_mu": True, "maliyet": 5,
+            "_id": "kariyer_riasec", "kategori": K2, "kategori_alt_baslik": "İlgi alanlarını mesleklerle eşleştir", "kategori_ikon": "Briefcase",
+            "baslik": "Meslek Seçimi (RIASEC)", "soru_sayisi": 20, "sure_dk": 10, "premium_mu": False, "maliyet": 0,
             "sorular": [
-                {
-                    "id": "l1", 
-                    "soru": "Bir projede beklenmedik bir kriz çıktığında ne yaparsın?", 
-                    "cevaplar": [
-                        {"metin": "Soğukkanlılığımı korur ve ekibe görev dağılımı yaparım", "deger": "Koordinatör"},
-                        {"metin": "Hızlıca aksiyon alır ve sorunu doğrudan çözmeye odaklanırım", "deger": "Biçimlendirici"},
-                        {"metin": "Krizin nedenlerini araştırıp veri toplarım", "deger": "Gözlemci"}
-                    ]
-                },
-                {
-                    "id": "l2", 
-                    "soru": "Ekip toplantılarında genelde nasıl bir tutum sergilersin?", 
-                    "cevaplar": [
-                        {"metin": "Konuşulanları not alır, fikirleri uygulanabilir planlara dökerim", "deger": "Uygulayıcı"},
-                        {"metin": "Ortamı neşelendirir ve takımın enerjisini yüksek tutarım", "deger": "Takım Oyuncusu"},
-                        {"metin": "Farklı kaynaklardan yeni fikirler ve stratejiler getiririm", "deger": "Kaşif"}
-                    ]
-                },
-                {
-                    "id": "l3", 
-                    "soru": "Proje teslimine çok az kaldı ama detaylarda hatalar var. Ne yaparsın?", 
-                    "cevaplar": [
-                        {"metin": "Hataları düzeltmek için uykusuz kalır, her şeyin kusursuz olmasını sağlarım", "deger": "Tamamlayıcı (Mükemmeliyetçi)"},
-                        {"metin": "Ana hedef çalışıyorsa küçük detayları görmezden gelip teslim ederim", "deger": "Sonuç Odaklı"},
-                        {"metin": "Ekiptekileri toplar ve hataları hızlıca bölüştürürüm", "deger": "Koordinatör"}
-                    ]
-                }
+                {"id": "r1", "soru": "Hangi aktivite sana daha keyifli gelir?", "cevaplar": [{"metin": "Motor veya bilgisayar parçalarını söküp tamir etmek", "deger": "Gerçekçi"}, {"metin": "Hastalıkların genetik kökenlerini laboratuvarda araştırmak", "deger": "Araştırmacı"}, {"metin": "Bir romana kapak tasarımı çizmek", "deger": "Sanatçı"}]},
+                {"id": "r2", "soru": "Çalışma arkadaşların seni nasıl tanımlar?", "cevaplar": [{"metin": "Pratik, alet kullanabilen, iş bitirici", "deger": "Gerçekçi"}, {"metin": "Girişken, ikna edici, lider ruhlu", "deger": "Girişimci"}, {"metin": "Düzenli, kurallara uyan, detaycı", "deger": "Geleneksel"}]},
+                {"id": "r3", "soru": "Hangi ortamda daha verimli çalışırsın?", "cevaplar": [{"metin": "Açık havada, şantiyede veya atölyede", "deger": "Gerçekçi"}, {"metin": "Bol verinin olduğu sessiz bir analiz odasında", "deger": "Araştırmacı"}, {"metin": "İnsanlarla sürekli etkileşimde olduğum bir ofiste", "deger": "Sosyal"}]},
+                {"id": "r4", "soru": "Hangi TV programı ilgini çeker?", "cevaplar": [{"metin": "Borsa, ekonomi ve startup yatırımcıları", "deger": "Girişimci"}, {"metin": "Tarihi eserlerin restorasyonu veya sanat belgeselleri", "deger": "Sanatçı"}, {"metin": "Ev yenileme, inşaat veya doğada hayatta kalma", "deger": "Gerçekçi"}]},
+                {"id": "r5", "soru": "Hangisi senin için daha çekici bir kariyerdir?", "cevaplar": [{"metin": "Psikolog, öğretmen veya hemşire olmak", "deger": "Sosyal"}, {"metin": "Yazılım mühendisi, astronom veya kimyager olmak", "deger": "Araştırmacı"}, {"metin": "Muhasebeci, veri giriş uzmanı veya bankacı olmak", "deger": "Geleneksel"}]},
+                {"id": "r6", "soru": "Çözmen gereken bir sorun var. Nasıl başlarsın?", "cevaplar": [{"metin": "Sorunu yaşayanlarla empati kurar, onlarla konuşurum", "deger": "Sosyal"}, {"metin": "Grafikleri ve istatistikleri açıp kök nedeni bulurum", "deger": "Araştırmacı"}, {"metin": "İlgili yönetmelik ve kurallar kitabını açıp okurum", "deger": "Geleneksel"}]},
+                {"id": "r7", "soru": "Bir organizasyon yapıyorsun. Görevin ne olurdu?", "cevaplar": [{"metin": "Etkinliğin bütçesini ve davetli listelerini eksiksiz tutmak", "deger": "Geleneksel"}, {"metin": "Sahnede sunuculuk yapmak ve sponsor bulmak", "deger": "Girişimci"}, {"metin": "Dekoru, müzikleri ve görsel temayı ayarlamak", "deger": "Sanatçı"}]},
+                {"id": "r8", "soru": "Hangi aletleri kullanmak sana daha doğal gelir?", "cevaplar": [{"metin": "Mikroskop, teleskop, veri analiz yazılımları", "deger": "Araştırmacı"}, {"metin": "Tornavida, matkap, 3D yazıcı veya iş makineleri", "deger": "Gerçekçi"}, {"metin": "Enstrüman, kamera, fırça veya tasarım tabletleri", "deger": "Sanatçı"}]},
+                {"id": "r9", "soru": "Masanda her zaman neyin bulunmasını istersin?", "cevaplar": [{"metin": "Hesap makinesi, takvim ve düzenli klasörler", "deger": "Geleneksel"}, {"metin": "Ekip arkadaşlarımın fotoğrafları ve hediye eşyalar", "deger": "Sosyal"}, {"metin": "Sektörel dergiler, borsa grafikleri veya kartvizitler", "deger": "Girişimci"}]},
+                {"id": "r10", "soru": "Hayalindeki projeyi yönetecek olsan bu ne olurdu?", "cevaplar": [{"metin": "Uluslararası çapta milyonlar kazandıracak bir şirket", "deger": "Girişimci"}, {"metin": "Kansere çare bulacak akademik bir araştırma", "deger": "Araştırmacı"}, {"metin": "Depremzedeler için dev bir sosyal yardım ağı", "deger": "Sosyal"}]},
+                {"id": "r11", "soru": "Hangisinden daha çok kaçınırsın?", "cevaplar": [{"metin": "Bütün gün Excel'de veri kopyala-yapıştır yapmaktan", "deger": "Sanatçı"}, {"metin": "Müşterilere bir şeyler satmaya veya ikna etmeye çalışmaktan", "deger": "Araştırmacı"}, {"metin": "Makinelerin yağ ve kiriyle uğraşmaktan", "deger": "Sosyal"}]},
+                {"id": "r12", "soru": "Boş zamanlarında okumayı tercih ettiğin tür nedir?", "cevaplar": [{"metin": "Bilim-kurgu, teknoloji veya popüler bilim dergileri", "deger": "Araştırmacı"}, {"metin": "Liderlerin biyografileri ve başarı hikayeleri", "deger": "Girişimci"}, {"metin": "Şiir, roman veya sanat tarihi kitapları", "deger": "Sanatçı"}]},
+                {"id": "r13", "soru": "Senin için en büyük başarı nedir?", "cevaplar": [{"metin": "Büyük bir kitleye hitap etmek ve onları etkilemek", "deger": "Girişimci"}, {"metin": "Kusursuz çalışan, sıfır hatalı bir sistem kurmak", "deger": "Geleneksel"}, {"metin": "Somut, elle tutulur işe yarar bir ürün inşa etmek", "deger": "Gerçekçi"}]},
+                {"id": "r14", "soru": "Okul yıllarında en sevdiğin ders hangisiydi?", "cevaplar": [{"metin": "Matematik, Geometri veya Fizik", "deger": "Araştırmacı"}, {"metin": "Resim, Müzik veya Edebiyat", "deger": "Sanatçı"}, {"metin": "Beden Eğitimi veya Mesleki Atölye dersleri", "deger": "Gerçekçi"}]},
+                {"id": "r15", "soru": "Sıkıcı ve rutin bir işi nasıl yaparsın?", "cevaplar": [{"metin": "Kurallara harfiyen uyar, eksiksiz tamamlarım", "deger": "Geleneksel"}, {"metin": "Sıkılırım, yaratıcı bir kestirme yol bulmaya çalışırım", "deger": "Sanatçı"}, {"metin": "Bu işi yapması için başkasını ikna ederim", "deger": "Girişimci"}]},
+                {"id": "r16", "soru": "İş dünyasındaki en büyük korkun nedir?", "cevaplar": [{"metin": "İnsanlardan izole, karanlık bir odada tek başıma çalışmak", "deger": "Sosyal"}, {"metin": "Yenilik üretemeden sadece verilen emirleri uygulamak", "deger": "Sanatçı"}, {"metin": "Maddi olarak batmak ve güç kaybetmek", "deger": "Girişimci"}]},
+                {"id": "r17", "soru": "Hayvanlarla veya bitkilerle ilgilenmek sana nasıl gelir?", "cevaplar": [{"metin": "Harika! Doğayla iç içe olmayı ve tarımı severim", "deger": "Gerçekçi"}, {"metin": "Türlerini ve genetik yapılarını incelemek isterim", "deger": "Araştırmacı"}, {"metin": "Onların fotoğraflarını çekmek veya resmini yapmak isterim", "deger": "Sanatçı"}]},
+                {"id": "r18", "soru": "Yeni bir şey öğrenirken en çok hangi yöntemi seversin?", "cevaplar": [{"metin": "Kendi kendime deneyler yaparak ve okuyarak", "deger": "Araştırmacı"}, {"metin": "Birisinin bana uygulamalı olarak göstermesiyle", "deger": "Gerçekçi"}, {"metin": "Grup halinde tartışarak ve fikir alışverişi yaparak", "deger": "Sosyal"}]},
+                {"id": "r19", "soru": "Çevren senin genellikle hangi özelliğini över?", "cevaplar": [{"metin": "İnsanları dinleme ve çok iyi tavsiye verme yeteneğimi", "deger": "Sosyal"}, {"metin": "Çok düzenli olmamı ve hiçbir detayı atlamamamı", "deger": "Geleneksel"}, {"metin": "Risk alabilme ve iş bitiricilik yeteneğimi", "deger": "Girişimci"}]},
+                {"id": "r20", "soru": "Kendi işini kuracak olsan bu ne şirketi olurdu?", "cevaplar": [{"metin": "Muhasebe, denetim veya veri arşivleme firması", "deger": "Geleneksel"}, {"metin": "Mimarlık ofisi, reklam ajansı veya tasarım stüdyosu", "deger": "Sanatçı"}, {"metin": "İnşaat, lojistik veya otomotiv üretim tesisi", "deger": "Gerçekçi"}]}
             ]
         },
+
+        # =======================================================
+        # 4. İNGİLİZCE YETERLİLİK (CEFR) - 20 SORU
+        # =======================================================
         {
-            "_id": "calisma_ortami",
-            "kategori": "KATMAN 3: Çalışma Stilin",
-            "kategori_alt_baslik": "Senin için en verimli çalışma modelini bul",
-            "kategori_ikon": "Lock",
-            "baslik": "Çalışma Ortamı Tercihi",
-            "soru_sayisi": 2, "sure_dk": 2, "premium_mu": True, "maliyet": 5,
+            "_id": "ingilizce_cefr", "kategori": K2, "kategori_alt_baslik": "Global yetkinliğini ölç", "kategori_ikon": "Languages",
+            "baslik": "İngilizce Yeterlilik (CEFR)", "soru_sayisi": 20, "sure_dk": 15, "premium_mu": False, "maliyet": 0,
             "sorular": [
-                {
-                    "id": "co1", 
-                    "soru": "Günlük enerjini ve verimini en çok hangisi artırır?", 
-                    "cevaplar": [
-                        {"metin": "Evimdeki sessiz, kendi düzenimi kurduğum çalışma köşem", "deger": "Uzaktan (Remote)"},
-                        {"metin": "Ofisteki canlı ortam ve ekip arkadaşlarımla yüz yüze sohbet", "deger": "Ofis İçi"},
-                        {"metin": "Haftanın bir kısmını evde, bir kısmını ofiste geçirmek", "deger": "Hibrit"}
-                    ]
-                },
-                {
-                    "id": "co2", 
-                    "soru": "Yöneticinin seninle nasıl iletişim kurmasını tercih edersin?", 
-                    "cevaplar": [
-                        {"metin": "Sadece hedefi versin, ne zaman ve nasıl yapacağıma ben karar vereyim", "deger": "Bağımsız Çalışma"},
-                        {"metin": "Günlük olarak ilerlememi kontrol etsin ve yönlendirsin", "deger": "Yapılandırılmış Çalışma"},
-                        {"metin": "İhtiyacım olduğunda ona ulaşabileyim, esnek bir bağımız olsun", "deger": "Esnek Çalışma"}
-                    ]
-                }
+                {"id": "e1", "soru": "She ___ a doctor. She works in a hospital.", "cevaplar": [{"metin": "is", "deger": "A1"}, {"metin": "are", "deger": "Hatalı"}, {"metin": "am", "deger": "Hatalı"}]},
+                {"id": "e2", "soru": "I ___ to the cinema yesterday.", "cevaplar": [{"metin": "go", "deger": "Hatalı"}, {"metin": "went", "deger": "A2"}, {"metin": "have gone", "deger": "Hatalı"}]},
+                {"id": "e3", "soru": "I have been living in London ___ five years.", "cevaplar": [{"metin": "since", "deger": "Hatalı"}, {"metin": "for", "deger": "B1"}, {"metin": "ago", "deger": "Hatalı"}]},
+                {"id": "e4", "soru": "If I ___ a million dollars, I would buy a big house.", "cevaplar": [{"metin": "have", "deger": "Hatalı"}, {"metin": "will have", "deger": "Hatalı"}, {"metin": "had", "deger": "B1"}]},
+                {"id": "e5", "soru": "By this time next year, I ___ from the university.", "cevaplar": [{"metin": "will graduate", "deger": "B2"}, {"metin": "will have graduated", "deger": "C1"}, {"metin": "graduated", "deger": "Hatalı"}]},
+                {"id": "e6", "soru": "Hangi kelime 'çok yorgun' (very tired) anlamına gelir?", "cevaplar": [{"metin": "Exhausted", "deger": "B2"}, {"metin": "Excited", "deger": "Hatalı"}, {"metin": "Confused", "deger": "Hatalı"}]},
+                {"id": "e7", "soru": "Despite ___ the rain, we went out for a walk.", "cevaplar": [{"metin": "of", "deger": "Hatalı"}, {"metin": "from", "deger": "Hatalı"}, {"metin": "(No preposition)", "deger": "C1"}]},
+                {"id": "e8", "soru": "'Take for granted' deyiminin anlamı nedir?", "cevaplar": [{"metin": "Bir şeyi ödünç almak", "deger": "Hatalı"}, {"metin": "Kıymetini bilmemek, cepte görmek", "deger": "C1"}, {"metin": "Garanti vermek", "deger": "Hatalı"}]},
+                {"id": "e9", "soru": "Had I known you were coming, I ___ a cake.", "cevaplar": [{"metin": "would bake", "deger": "Hatalı"}, {"metin": "will bake", "deger": "Hatalı"}, {"metin": "would have baked", "deger": "C2"}]},
+                {"id": "e10", "soru": "Hangi cümle dilbilgisi açısından DOĞRUDUR?", "cevaplar": [{"metin": "I look forward to hear from you.", "deger": "Hatalı"}, {"metin": "I look forward to hearing from you.", "deger": "C1"}, {"metin": "I'm look forward to hear.", "deger": "Hatalı"}]},
+                {"id": "e11", "soru": "I'm not used ___ up so early in the morning.", "cevaplar": [{"metin": "to get", "deger": "Hatalı"}, {"metin": "getting", "deger": "Hatalı"}, {"metin": "to getting", "deger": "B2"}]},
+                {"id": "e12", "soru": "The meeting was called ___ because of the storm.", "cevaplar": [{"metin": "off", "deger": "B2"}, {"metin": "out", "deger": "Hatalı"}, {"metin": "up", "deger": "Hatalı"}]},
+                {"id": "e13", "soru": "Hardly ___ reached the station when the train left.", "cevaplar": [{"metin": "I had", "deger": "Hatalı"}, {"metin": "had I", "deger": "C2"}, {"metin": "did I", "deger": "Hatalı"}]},
+                {"id": "e14", "soru": "He denied ___ the window.", "cevaplar": [{"metin": "to break", "deger": "Hatalı"}, {"metin": "break", "deger": "Hatalı"}, {"metin": "breaking", "deger": "B1"}]},
+                {"id": "e15", "soru": "You ___ better see a doctor if you feel sick.", "cevaplar": [{"metin": "should", "deger": "Hatalı"}, {"metin": "would", "deger": "Hatalı"}, {"metin": "had", "deger": "B2"}]},
+                {"id": "e16", "soru": "I wish I ___ that car. It breaks down every day.", "cevaplar": [{"metin": "didn't buy", "deger": "Hatalı"}, {"metin": "hadn't bought", "deger": "C1"}, {"metin": "don't buy", "deger": "Hatalı"}]},
+                {"id": "e17", "soru": "It is crucial that the document ___ signed immediately.", "cevaplar": [{"metin": "is", "deger": "Hatalı"}, {"metin": "be", "deger": "C2"}, {"metin": "was", "deger": "Hatalı"}]},
+                {"id": "e18", "soru": "'To beat around the bush' deyimi ne demektir?", "cevaplar": [{"metin": "Ormanda kaybolmak", "deger": "Hatalı"}, {"metin": "Asıl konuya girmekten kaçınmak", "deger": "C1"}, {"metin": "Zor bir işi başarmak", "deger": "Hatalı"}]},
+                {"id": "e19", "soru": "She is said ___ a great singer in her youth.", "cevaplar": [{"metin": "to be", "deger": "Hatalı"}, {"metin": "that she was", "deger": "Hatalı"}, {"metin": "to have been", "deger": "C2"}]},
+                {"id": "e20", "soru": "Hangi kelime 'Kaçınılmaz' anlamına gelir?", "cevaplar": [{"metin": "Inevitable", "deger": "C1"}, {"metin": "Incredible", "deger": "Hatalı"}, {"metin": "Invisible", "deger": "Hatalı"}]}
+            ]
+        },
+
+        # =======================================================
+        # 5. DİJİTAL YETKİNLİK - 20 SORU
+        # =======================================================
+        {
+            "_id": "dijital_yetkinlik", "kategori": K2, "kategori_alt_baslik": "Teknolojiye uyum sağlama gücün", "kategori_ikon": "Desktop",
+            "baslik": "Dijital Yetkinlik Testi", "soru_sayisi": 20, "sure_dk": 8, "premium_mu": False, "maliyet": 0,
+            "sorular": [
+                {"id": "dy1", "soru": "Bir yazılım hatasıyla karşılaştığında ne yaparsın?", "cevaplar": [{"metin": "Google veya AI araçlarıyla çözümü ararım", "deger": "İleri Düzey"}, {"metin": "Uyarıyı not edip uzmana danışırım", "deger": "Temel Seviye"}, {"metin": "Menüleri kurcalayarak kendim çözerim", "deger": "Orta Düzey"}]},
+                {"id": "dy2", "soru": "Sunum/Rapor hazırlarken ne kullanırsın?", "cevaplar": [{"metin": "Sadece Word veya standart PowerPoint", "deger": "Temel Seviye"}, {"metin": "Canva, Notion veya bulut araçları", "deger": "İleri Düzey"}, {"metin": "Sadece metin yazarım, tasarıma bakmam", "deger": "Geleneksel"}]},
+                {"id": "dy3", "soru": "Yeni bir yapay zeka aracı çıktığında tepkin ne olur?", "cevaplar": [{"metin": "Hemen dener ve işime entegre ederim", "deger": "Yenilikçi"}, {"metin": "İnsanlar kullanıp övdükten sonra bakarım", "deger": "Pragmatik"}, {"metin": "Mevcut sistemim bana yetiyor, ilgilenmem", "deger": "Geleneksel"}]},
+                {"id": "dy4", "soru": "Bilgisayarda aynı anda 10 pencere açıksa nasıl yönetirsin?", "cevaplar": [{"metin": "Kısayol tuşları (Alt+Tab) ve çift monitörle", "deger": "İleri Düzey"}, {"metin": "Mouse ile tek tek tıklayarak", "deger": "Temel Seviye"}, {"metin": "Kafam karışır, hepsini kapatır baştan açarım", "deger": "Düşük Seviye"}]},
+                {"id": "dy5", "soru": "Önemli dosyalarını nerede saklarsın?", "cevaplar": [{"metin": "Masaüstünde 'Yeni Klasör' içinde", "deger": "Temel Seviye"}, {"metin": "Sadece taşınabilir USB belleğimde", "deger": "Geleneksel"}, {"metin": "Google Drive, OneDrive gibi bulut sistemlerinde", "deger": "İleri Düzey"}]},
+                {"id": "dy6", "soru": "Excel/Google Sheets kullanım seviyen nedir?", "cevaplar": [{"metin": "Sadece tablo çizer, veri yazarım", "deger": "Temel Seviye"}, {"metin": "VLOOKUP, Pivot tablolar ve makrolar yazarım", "deger": "İleri Düzey"}, {"metin": "Toplama ve çıkarma formüllerini bilirim", "deger": "Orta Düzey"}]},
+                {"id": "dy7", "soru": "İnternette gördüğün bir haberin doğruluğunu nasıl teyit edersin?", "cevaplar": [{"metin": "Farklı güvenilir kaynaklardan ve teyit sitelerinden", "deger": "İleri Düzey"}, {"metin": "Haber spikeri söylüyorsa doğrudur derim", "deger": "Temel Seviye"}, {"metin": "Yorumlara bakar, insanların ne dediğini okurum", "deger": "Orta Düzey"}]},
+                {"id": "dy8", "soru": "Şifre güvenliğini nasıl sağlarsın?", "cevaplar": [{"metin": "Her yerde aynı veya benzer şifreyi kullanırım", "deger": "Temel Seviye"}, {"metin": "Şifre yöneticisi (Password Manager) ve 2FA kullanırım", "deger": "İleri Düzey"}, {"metin": "Defterime yazar, oradan bakarım", "deger": "Geleneksel"}]},
+                {"id": "dy9", "soru": "Birine büyük boyutlu (2 GB) bir video göndermen gerekse?", "cevaplar": [{"metin": "WeTransfer veya Drive linki ile paylaşırım", "deger": "İleri Düzey"}, {"metin": "WhatsApp veya Mail üzerinden atmayı denerim", "deger": "Temel Seviye"}, {"metin": "Flaş belleğe atıp elden veririm", "deger": "Geleneksel"}]},
+                {"id": "dy10", "soru": "Kodlama veya algoritma mantığı hakkında ne düşünüyorsun?", "cevaplar": [{"metin": "Hiç anlamam, benim işim değil", "deger": "Temel Seviye"}, {"metin": "Temel mantığını anlar, basit betikler yazabilirim", "deger": "İleri Düzey"}, {"metin": "Öğrenmek isterim ama nereden başlayacağımı bilemem", "deger": "Orta Düzey"}]},
+                {"id": "dy11", "soru": "Uzaktan (Online) toplantılarda nasılsındır?", "cevaplar": [{"metin": "Ekran paylaşımı, beyaz tahta vb. araçları ustaca kullanırım", "deger": "İleri Düzey"}, {"metin": "Sadece kamerayı açıp konuşmayı bilirim", "deger": "Temel Seviye"}, {"metin": "Sürekli 'Sesim geliyor mu?' diye sorarım", "deger": "Düşük Seviye"}]},
+                {"id": "dy12", "soru": "Bir web sitesi çökerse (Örn: Error 404) ilk ne düşünürsün?", "cevaplar": [{"metin": "Bilgisayarıma virüs girdi sanırım", "deger": "Temel Seviye"}, {"metin": "Sayfa bulunamadı, URL yanlış veya sunucu hatasıdır", "deger": "İleri Düzey"}, {"metin": "İnternetim koptu diye modemi resetlerim", "deger": "Orta Düzey"}]},
+                {"id": "dy13", "soru": "Bilmediğin İngilizce bir makale okuman gerekirse?", "cevaplar": [{"metin": "Google Translate veya DeepL tarayıcı eklentisiyle anında çeviririm", "deger": "İleri Düzey"}, {"metin": "Kelime kelime sözlükten bakarak okumaya çalışırım", "deger": "Geleneksel"}, {"metin": "İngilizce olduğu için okumaktan vazgeçerim", "deger": "Temel Seviye"}]},
+                {"id": "dy14", "soru": "İşlerini takip etmek için ne kullanırsın?", "cevaplar": [{"metin": "Trello, Asana veya Jira gibi dijital panolar", "deger": "İleri Düzey"}, {"metin": "Fiziksel ajanda ve post-it kağıtları", "deger": "Geleneksel"}, {"metin": "Telefonun kendi notlar uygulamasını", "deger": "Orta Düzey"}]},
+                {"id": "dy15", "soru": "Klavye kullanım hızın nasıldır?", "cevaplar": [{"metin": "On parmak, ekrana bakarak çok hızlı yazarım", "deger": "İleri Düzey"}, {"metin": "Klavyeye bakarak iki işaret parmağımla yazarım", "deger": "Temel Seviye"}, {"metin": "Ortalama bir hızda yazarım", "deger": "Orta Düzey"}]},
+                {"id": "dy16", "soru": "Cihazlarının yazılım güncellemelerini ne sıklıkla yaparsın?", "cevaplar": [{"metin": "Çıkar çıkmaz yapar, yenilikleri okurum", "deger": "İleri Düzey"}, {"metin": "Sistem beni zorlayana kadar 'Daha Sonra Hatırlat' derim", "deger": "Geleneksel"}, {"metin": "Telefon yavaşlayınca mecburen yaparım", "deger": "Temel Seviye"}]},
+                {"id": "dy17", "soru": "Sosyal medyada gizlilik ayarların nasıldır?", "cevaplar": [{"metin": "Her şeyim herkese açıktır, ayarlara hiç dokunmadım", "deger": "Temel Seviye"}, {"metin": "Bilinçli olarak düzenledim, verilerimi kimin göreceğini seçerim", "deger": "İleri Düzey"}, {"metin": "Sadece hesabı gizli yapmayı bilirim", "deger": "Orta Düzey"}]},
+                {"id": "dy18", "soru": "Rutin bir dijital görevi (Örn: Her gün mailleri klasörlemek) nasıl yaparsın?", "cevaplar": [{"metin": "Otomasyon (Zapier/Kurallar) kurar, makineye yaptırırım", "deger": "İleri Düzey"}, {"metin": "Her gün elimle tek tek seçip klasörlerim", "deger": "Geleneksel"}, {"metin": "Asistanıma veya stajyere yaptırırım", "deger": "Orta Düzey"}]},
+                {"id": "dy19", "soru": "Biri sana 'PDF dosyasını Word'e çevir' derse?", "cevaplar": [{"metin": "Hemen online ücretsiz çevirici siteleri kullanırım", "deger": "İleri Düzey"}, {"metin": "Açıp bakarak Word'e baştan yazarım", "deger": "Temel Seviye"}, {"metin": "PDF değiştirilmez ki diye itiraz ederim", "deger": "Düşük Seviye"}]},
+                {"id": "dy20", "soru": "Açık kaynak (Open Source) sence nedir?", "cevaplar": [{"metin": "Kodları herkese açık, geliştirilebilir ücretsiz yazılımlar", "deger": "İleri Düzey"}, {"metin": "Kaynağı belirsiz, virüslü siteler", "deger": "Temel Seviye"}, {"metin": "Sadece bilgisayar korsanlarının kullandığı bir şey", "deger": "Düşük Seviye"}]}
+            ]
+        },
+
+        # =======================================================
+        # 6. LİDERLİK & TAKIM ROLÜ (BELBİN) - 20 SORU
+        # =======================================================
+        {
+            "_id": "liderlik_belbin", "kategori": K3, "kategori_alt_baslik": "Ekip içindeki baskın rolünü belirle", "kategori_ikon": "Lock",
+            "baslik": "Liderlik & Takım Rolü", "soru_sayisi": 20, "sure_dk": 10, "premium_mu": True, "maliyet": 5,
+            "sorular": [
+                {"id": "l1", "soru": "Beklenmedik bir kriz çıktığında ne yaparsın?", "cevaplar": [{"metin": "Soğukkanlı kalır, ekibe görev dağıtırım", "deger": "Koordinatör"}, {"metin": "Hızlı aksiyon alır, sorunu zorla da olsa çözerim", "deger": "Biçimlendirici"}, {"metin": "Krizin nedenlerini araştırır, veri toplarım", "deger": "Gözlemci"}]},
+                {"id": "l2", "soru": "Toplantılarda genelde nasıl bir tutum sergilersin?", "cevaplar": [{"metin": "Not alır, fikirleri uygulanabilir planlara dökerim", "deger": "Uygulayıcı"}, {"metin": "Ortamı neşelendirir, takımın enerjisini korurum", "deger": "Takım Oyuncusu"}, {"metin": "Farklı ve orijinal fikirler üretirim", "deger": "Kaşif/Mucit"}]},
+                {"id": "l3", "soru": "Teslime az kaldı ama detaylarda hatalar var. Ne yaparsın?", "cevaplar": [{"metin": "Uykusuz kalır, her şeyin kusursuz olmasını sağlarım", "deger": "Tamamlayıcı"}, {"metin": "Ana hedef çalışıyorsa detayları görmezden gelirim", "deger": "Sonuç Odaklı"}, {"metin": "Hataları ekibe bölüştürüp hızla çözdürürüm", "deger": "Koordinatör"}]},
+                {"id": "l4", "soru": "Yeni bir projeye atanırken senin için en önemli şey nedir?", "cevaplar": [{"metin": "Kendi uzmanlık alanımı konuşturabileceğim teknik bir iş olması", "deger": "Uzman"}, {"metin": "Ekibin uyumlu ve arkadaş canlısı olması", "deger": "Takım Oyuncusu"}, {"metin": "Projenin vizyoner ve daha önce yapılmamış olması", "deger": "Kaşif"}]},
+                {"id": "l5", "soru": "Grup içinde tartışma çıkarsa nasıl davranırsın?", "cevaplar": [{"metin": "Tarafları dinler, arabuluculuk yaparım", "deger": "Takım Oyuncusu"}, {"metin": "Masaya yumruğumu vurur, son kararı ben veririm", "deger": "Biçimlendirici"}, {"metin": "Tartışmaya girmem, elimdeki işe odaklanırım", "deger": "Uygulayıcı"}]},
+                {"id": "l6", "soru": "Bir fikri hayata geçirmek için en iyi yeteneğin nedir?", "cevaplar": [{"metin": "Fikri adımlara bölüp takvime bağlamak", "deger": "Uygulayıcı"}, {"metin": "Dışarıdan sponsor, yatırım ve yeni kontaklar bulmak", "deger": "Kaynak Araştırmacı"}, {"metin": "Riskleri analiz edip fikrin mantıklı olup olmadığını test etmek", "deger": "Gözlemci"}]},
+                {"id": "l7", "soru": "En zayıf noktanın ne olduğunu düşünüyorsun?", "cevaplar": [{"metin": "Detaylara takılıp büyük resmi kaçırmak", "deger": "Tamamlayıcı"}, {"metin": "İnsanları çok zorlayıp kırıcı olabilmek", "deger": "Biçimlendirici"}, {"metin": "Sadece kendi alanımla ilgilenip diğer konuları umursamamak", "deger": "Uzman"}]},
+                {"id": "l8", "soru": "Sana göre başarısızlığın en büyük sebebi nedir?", "cevaplar": [{"metin": "Planlara ve kurallara uyulmaması", "deger": "Uygulayıcı"}, {"metin": "Ekip içi iletişim eksikliği ve ego savaşları", "deger": "Takım Oyuncusu"}, {"metin": "Yaratıcılığın olmaması ve vizyonsuzluk", "deger": "Kaşif"}]},
+                {"id": "l9", "soru": "Ekip arkadaşların en çok hangi özelliğinden şikayet eder?", "cevaplar": [{"metin": "Çok fazla iş kilitlemem ve aşırı talepkar olmam", "deger": "Biçimlendirici"}, {"metin": "Aşırı mükemmeliyetçi olup işleri geciktirmem", "deger": "Tamamlayıcı"}, {"metin": "Sürekli yeni fikir atıp uygulamaya geçmemem", "deger": "Kaşif"}]},
+                {"id": "l10", "soru": "Ekibine yeni birini alacak olsan kim olmasını istersin?", "cevaplar": [{"metin": "Bana itaat edecek çalışkan ve sessiz biri", "deger": "Uygulayıcı arayan"}, {"metin": "Dışarıda geniş bir ağı olan, girişken biri", "deger": "Kaynak Araştırmacı"}, {"metin": "Sadece veriyle konuşan, mantıklı bir analist", "deger": "Gözlemci"}]},
+                {"id": "l11", "soru": "Proje sıkıcılaşmaya başladığında tepkin ne olur?", "cevaplar": [{"metin": "Sıkılsam da iş bitene kadar masadan kalkmam", "deger": "Tamamlayıcı"}, {"metin": "Ekibi motive edecek bir kutlama/etkinlik ayarlarım", "deger": "Takım Oyuncusu"}, {"metin": "İlgimi kaybeder, yeni ve heyecanlı projelere geçerim", "deger": "Kaynak Araştırmacı"}]},
+                {"id": "l12", "soru": "Karar alırken asıl kriterin nedir?", "cevaplar": [{"metin": "Objektif istatistikler ve rasyonel fayda", "deger": "Gözlemci"}, {"metin": "Ekibin çoğunluğunun ortak rızası", "deger": "Takım Oyuncusu"}, {"metin": "Hızlı sonuca götürecek kestirme ve pratik yol", "deger": "Biçimlendirici"}]},
+                {"id": "l13", "soru": "Masandaki işler yığıldığında ne yaparsın?", "cevaplar": [{"metin": "Kendi başıma gece gündüz çalışıp eritirim", "deger": "Uzman/Tamamlayıcı"}, {"metin": "İşleri asistanlara veya ekip arkadaşlarıma delege ederim", "deger": "Koordinatör"}, {"metin": "Paniklerim ama sonra bir sıraya koyarım", "deger": "Uygulayıcı"}]},
+                {"id": "l14", "soru": "Sıfırdan bir ürün tasarlanacak, ilk cümlen ne olur?", "cevaplar": [{"metin": "'Daha önce hiç yapılmamış, uçuk bir fikir bulalım.'", "deger": "Kaşif"}, {"metin": "'Bütçe ne kadar ve teslim tarihi ne zaman?'", "deger": "Uygulayıcı"}, {"metin": "'Kimler bu projede yer alacak, görevleri ne olacak?'", "deger": "Koordinatör"}]},
+                {"id": "l15", "soru": "Başkasının yazdığı raporu okurken ilk neye dikkat edersin?", "cevaplar": [{"metin": "İmla hatalarına, format ve hizalamalara", "deger": "Tamamlayıcı"}, {"metin": "Kullanılan argümanların mantıksal tutarlılığına", "deger": "Gözlemci"}, {"metin": "Yazının duygusuna ve okunabilirliğine", "deger": "Takım Oyuncusu"}]},
+                {"id": "l16", "soru": "Sana 'Vizyoner' mi denmesini tercih edersin, 'Güvenilir' mi?", "cevaplar": [{"metin": "Kesinlikle Vizyoner", "deger": "Kaşif/Biçimlendirici"}, {"metin": "Kesinlikle Güvenilir", "deger": "Uygulayıcı/Tamamlayıcı"}, {"metin": "İkisi de değil, 'Uzman' denmesini tercih ederim", "deger": "Uzman"}]},
+                {"id": "l17", "soru": "Bir fuara katıldığında vaktini nasıl geçirirsin?", "cevaplar": [{"metin": "Stantları gezer, yüzlerce yeni kişiyle tanışıp kartvizit toplarım", "deger": "Kaynak Araştırmacı"}, {"metin": "Sadece ilgimi çeken teknik sunumlara katılır not alırım", "deger": "Uzman/Gözlemci"}, {"metin": "Kendi şirketimin standında durur, düzeni sağlarım", "deger": "Uygulayıcı"}]},
+                {"id": "l18", "soru": "Çok inandığın bir fikri patron reddederse?", "cevaplar": [{"metin": "Pes etmem, onu ikna edene kadar tartışırım", "deger": "Biçimlendirici"}, {"metin": "Karara saygı duyar, eski işime geri dönerim", "deger": "Uygulayıcı"}, {"metin": "Fikrimi gizlice geliştirip çalıştığını ispatlarım", "deger": "Kaşif"}]},
+                {"id": "l19", "soru": "Takımdaki biri görevini yapmazsa...", "cevaplar": [{"metin": "Sert bir şekilde uyarır ve gerekirse takımdan atarım", "deger": "Biçimlendirici"}, {"metin": "Neden yapamadığını sorar, yardım teklif ederim", "deger": "Takım Oyuncusu"}, {"metin": "Durumu üst yönetime soğukkanlılıkla raporlarım", "deger": "Gözlemci"}]},
+                {"id": "l20", "soru": "Liderliği senin için en iyi anlatan kelime nedir?", "cevaplar": [{"metin": "Otorite ve İtici Güç", "deger": "Biçimlendirici"}, {"metin": "Orkestra Şefliği ve Organizasyon", "deger": "Koordinatör"}, {"metin": "İlham ve Vizyon", "deger": "Kaşif"}]}
+            ]
+        },
+
+        # =======================================================
+        # 7. ÇALIŞMA ORTAMI TERCİHİ - 20 SORU
+        # =======================================================
+        {
+            "_id": "calisma_ortami", "kategori": K3, "kategori_alt_baslik": "En verimli çalışma modelini bul", "kategori_ikon": "Lock",
+            "baslik": "Çalışma Ortamı Tercihi", "soru_sayisi": 20, "sure_dk": 8, "premium_mu": True, "maliyet": 5,
+            "sorular": [
+                {"id": "co1", "soru": "Günlük enerjini en çok hangisi artırır?", "cevaplar": [{"metin": "Evimdeki sessiz çalışma köşem", "deger": "Uzaktan"}, {"metin": "Ofisteki canlı ortam ve ekip arkadaşları", "deger": "Ofis"}, {"metin": "Haftanın bir kısmı evde, bir kısmı ofiste", "deger": "Hibrit"}]},
+                {"id": "co2", "soru": "Yöneticinin seninle nasıl iletişim kurmasını tercih edersin?", "cevaplar": [{"metin": "Hedefi versin, nasıl yapacağıma ben karar vereyim", "deger": "Bağımsız"}, {"metin": "Günlük olarak ilerlememi kontrol etsin", "deger": "Yapılandırılmış"}, {"metin": "İhtiyacım olduğunda ulaşayım, esnek olalım", "deger": "Esnek"}]},
+                {"id": "co3", "soru": "Arka plandaki sesler çalışmanı nasıl etkiler?", "cevaplar": [{"metin": "Çıt çıkmamalı, sese tahammülüm yok", "deger": "Sessiz Ortam"}, {"metin": "Kahve dükkanı uğultusu veya müzik beni motive eder", "deger": "Dinamik Ortam"}, {"metin": "Sohbet sesleri hariç her seste odaklanırım", "deger": "Seçici Ortam"}]},
+                {"id": "co4", "soru": "Kıyafet kodu (Dress Code) senin için ne kadar önemli?", "cevaplar": [{"metin": "Takım elbise veya şık giyinmek işe saygımı artırır", "deger": "Resmi"}, {"metin": "Pijamayla veya eşofmanla bile çalışabilmeliyim", "deger": "Rahat"}, {"metin": "Temiz ve günlük (Smart Casual) olması yeterli", "deger": "Yarı Resmi"}]},
+                {"id": "co5", "soru": "Çalışma saatleri sence nasıl olmalı?", "cevaplar": [{"metin": "Sabah 9 Akşam 5, iş bitince ekran kapanır", "deger": "Sabit Saatler"}, {"metin": "Gece 3'te çalışıp öğlen 12'de uyanabilmeliyim", "deger": "Tam Esnek"}, {"metin": "Çekirdek saatler olsun (11-15 arası), gerisi esnek", "deger": "Hibrit Saatler"}]},
+                {"id": "co6", "soru": "Öğle molasını nasıl değerlendirirsin?", "cevaplar": [{"metin": "İş arkadaşlarımla kalabalık bir masada yiyerek", "deger": "Sosyal"}, {"metin": "Bilgisayar başında tek başıma bir şeyler izleyerek", "deger": "İzole"}, {"metin": "Kısa bir yürüyüş veya spor yaparak", "deger": "Aktif"}]},
+                {"id": "co7", "soru": "Açık ofis düzeni (Duvarların olmadığı devasa masalar) sana göre mi?", "cevaplar": [{"metin": "Evet, iletişimi ve takım ruhunu hızlandırır", "deger": "Açık Ofis Sever"}, {"metin": "Hayır, sürekli dikkatim dağılır, kendime ait odam olmalı", "deger": "Kapalı Ofis Sever"}, {"metin": "Arada sırada güzel ama sürekli çekilmez", "deger": "Hibrit Sever"}]},
+                {"id": "co8", "soru": "Toplantılar sence nasıl olmalı?", "cevaplar": [{"metin": "Kamerası açık, yüz yüze veya Zoom üzerinden", "deger": "Yüz Yüze"}, {"metin": "Toplantı yerine e-posta veya Slack mesajıyla çözülmeli", "deger": "Asenkron"}, {"metin": "Sadece gerçekten acil durumlarda kısa toplantılar", "deger": "Minimalist"}]},
+                {"id": "co9", "soru": "Fiziksel çalışma masanda neyin eksikliği seni üzer?", "cevaplar": [{"metin": "İkinci bir monitör ve ergonomik bir koltuk", "deger": "Donanım Odaklı"}, {"metin": "Manzaralı bir pencere veya bol güneş ışığı", "deger": "Atmosfer Odaklı"}, {"metin": "Sessizlik ve sadece bana ait bir alan", "deger": "Gizlilik Odaklı"}]},
+                {"id": "co10", "soru": "Çalıştığın şirket sana bir hediye verecek, hangisini seçersin?", "cevaplar": [{"metin": "Evime son model kahve makinesi ve masa", "deger": "Ev Odaklı"}, {"metin": "Lüks bir restoranda tüm ekiple akşam yemeği", "deger": "Ofis Odaklı"}, {"metin": "1 yıl geçerli Netflix/Spotify ve Spor Salonu üyeliği", "deger": "Yaşam Odaklı"}]},
+                {"id": "co11", "soru": "İşe gidip gelmek (Trafik/Yol) senin için ne ifade ediyor?", "cevaplar": [{"metin": "Korkunç bir zaman kaybı, asla katlanamam", "deger": "Tam Uzaktan"}, {"metin": "Podcast/müzik dinlediğim güzel bir geçiş süreci", "deger": "Ofise Uygun"}, {"metin": "Haftada 1-2 gün olursa katlanabilirim", "deger": "Hibrit"}]},
+                {"id": "co12", "soru": "İş arkadaşlarınla mesai dışında görüşür müsün?", "cevaplar": [{"metin": "Evet, çoğu en yakın arkadaşımdır", "deger": "Sosyal Sınır Yok"}, {"metin": "Hayır, iş biter arkadaşlık biter", "deger": "Keskin Sınır"}, {"metin": "Yılda bir iki şirket partisinde, o kadar", "deger": "Profesyonel Mesafe"}]},
+                {"id": "co13", "soru": "Ofisteki ısı ve ışık senin için ne kadar önemli?", "cevaplar": [{"metin": "Çok önemli, klima savaşları bile yaparım", "deger": "Hassas"}, {"metin": "Kazak giyer geçerim, çok takılmam", "deger": "Uyumlu"}, {"metin": "Kendi evimde olduğum için hepsini ben ayarlarım", "deger": "Kontrolcü (Uzaktan)"}]},
+                {"id": "co14", "soru": "İşyerinde evcil hayvan (Kedi/Köpek) olmasına nasıl bakarsın?", "cevaplar": [{"metin": "Harika! Stresimi alır, bayılırım", "deger": "Pet-Friendly"}, {"metin": "Alerjim var veya dikkatimi dağıtır, istemem", "deger": "İzole"}, {"metin": "Bana bulaşmadıkları sürece sorun yok", "deger": "Nötr"}]},
+                {"id": "co15", "soru": "Ofiste müzik dinleme kültürün nasıldır?", "cevaplar": [{"metin": "Hoparlörden herkesin duyacağı ortak müzik", "deger": "Kolektif"}, {"metin": "Devasa kulaklıklarımı takar dünyayla iletişimimi keserim", "deger": "Bireysel"}, {"metin": "Müzik dinlemem, sessizliği tercih ederim", "deger": "Sessiz"}]},
+                {"id": "co16", "soru": "Şirket kuralları ve hiyerarşi sana ne hissettirir?", "cevaplar": [{"metin": "Büyük kurumsal şirketlerin bürokrasisini severim", "deger": "Kurumsal"}, {"metin": "Herkesin eşit olduğu, patronun olmadığı Startup kültürü", "deger": "Startup/Düz Hiyerarşi"}, {"metin": "Kendi kurallarımı kendim koymalıyım", "deger": "Freelance"}]},
+                {"id": "co17", "soru": "Çalışırken sürekli bölünmek (Soru sorulması vs.)", "cevaplar": [{"metin": "Nefret ederim, odaklanmam saatler alıyor", "deger": "Derin Çalışan"}, {"metin": "Sorun değil, çabuk toparlarım", "deger": "Dinamik Çalışan"}, {"metin": "Zaten başkalarına yardım etmek işimin bir parçası", "deger": "Sosyal Çalışan"}]},
+                {"id": "co18", "soru": "Gün içinde sık sık mola verir misin?", "cevaplar": [{"metin": "Pomodoro tekniğiyle sık ve kısa molalar", "deger": "Sistematik"}, {"metin": "İş bitene kadar saatlerce kalkmam", "deger": "Odaklı"}, {"metin": "Ne zaman canım sıkılırsa kalkıp gezinirim", "deger": "Esnek"}]},
+                {"id": "co19", "soru": "Farklı şehirlerden veya ülkelerden insanlarla çalışmak?", "cevaplar": [{"metin": "Zaman farkı ve iletişim beni yorar", "deger": "Lokal"}, {"metin": "Harika bir deneyim, global olmayı severim", "deger": "Global"}, {"metin": "İşi yapıyorlarsa nereden oldukları umurumda değil", "deger": "Sonuç Odaklı"}]},
+                {"id": "co20", "soru": "Sonuç olarak, seni en mutlu edecek çalışma sözleşmesi?", "cevaplar": [{"metin": "%100 Uzaktan (Remote) Çalışma", "deger": "Tam Uzaktan"}, {"metin": "Haftada 5 gün modern bir plazada ofis", "deger": "Tam Ofis"}, {"metin": "İstediğim gün ofise, istediğim gün kafeye gidebileceğim esneklik", "deger": "Dijital Göçebe"}]}
+            ]
+        },
+
+        # =======================================================
+        # 8. GİRİŞİMCİLİK POTANSİYELİ - 20 SORU
+        # =======================================================
+        {
+            "_id": "girisimcilik_potansiyeli", "kategori": K3, "kategori_alt_baslik": "Kendi işini kurma ve risk alma", "kategori_ikon": "Lock",
+            "baslik": "Girişimcilik Potansiyeli", "soru_sayisi": 20, "sure_dk": 10, "premium_mu": True, "maliyet": 5,
+            "sorular": [
+                {"id": "g1", "soru": "Belirsizlik içeren bir iş fırsatı karşına çıksa ne yaparsın?", "cevaplar": [{"metin": "Büyük resmi görür ve risk alarak denerim", "deger": "Girişimci"}, {"metin": "Tüm detayları analiz etmeden adım atmam", "deger": "Temkinli"}, {"metin": "Düzenli maaşımı bırakmam, ilgilenmem", "deger": "Çalışan"}]},
+                {"id": "g2", "soru": "Cebinde sadece 10.000 TL var, ne yaparsın?", "cevaplar": [{"metin": "Hepsini getirisi yüksek ama riskli bir projeye yatırırım", "deger": "Yatırımcı/Risk Alan"}, {"metin": "Yarısını acil durum için saklar, yarısını borsaya koyarım", "deger": "Stratejik"}, {"metin": "Hepsini güvenli bir vadeli hesaba atar dokunmam", "deger": "Geleneksel"}]},
+                {"id": "g3", "soru": "Bir projen tamamen başarısız oldu ve battı. Tepkin?", "cevaplar": [{"metin": "Hatalarımdan ders alır, hemen yeni bir proje kurarım", "deger": "Girişimci/Dirençli"}, {"metin": "Çok üzülürüm, uzun süre kendime gelemem", "deger": "Hassas"}, {"metin": "Bir daha asla kendi işimi kurmam, maaşlı işe dönerim", "deger": "Pes Eden"}]},
+                {"id": "g4", "soru": "Bir fikrin var ama paran yok. Ne yaparsın?", "cevaplar": [{"metin": "Yatırımcıları bulur, sunum yapar para toplarım", "deger": "İkna Edici"}, {"metin": "Yıllarca maaşlı çalışıp sermaye biriktiririm", "deger": "Sabırlı"}, {"metin": "Fikri rafa kaldırır veya unuturum", "deger": "Pasif"}]},
+                {"id": "g5", "soru": "Girişimci denince aklına ilk gelen kelime nedir?", "cevaplar": [{"metin": "Özgürlük ve vizyon", "deger": "Girişimci"}, {"metin": "Stres, uykusuzluk ve batma riski", "deger": "Riskten Kaçınan"}, {"metin": "Çok para ve lüks hayat", "deger": "Hayalperest"}]},
+                {"id": "g6", "soru": "Satış yapmak (Birisini bir şey almaya ikna etmek) sana ne hissettirir?", "cevaplar": [{"metin": "Bayılırım, ikna yeteneğime güvenirim", "deger": "Doğuştan Satıcı"}, {"metin": "Nefret ederim, insanlardan para istemek zor", "deger": "Ürün Odaklı"}, {"metin": "Ürün iyiyse zaten kendi kendini satar", "deger": "Mühendis/Teknik"}]},
+                {"id": "g7", "soru": "Yeni tanıştığın insanlarla ağ (Network) kurma konusunda?", "cevaplar": [{"metin": "Herkesle tanışır, iletişim bilgilerini alırım", "deger": "Bağlantı Odaklı"}, {"metin": "Sadece işime yarayacak kişilerle konuşurum", "deger": "Çıkarcı/Stratejik"}, {"metin": "Sohbet etmekten çekinir, sessiz kalırım", "deger": "İçedönük"}]},
+                {"id": "g8", "soru": "Patronunun sana verdiği bir emri yanlış bulursan?", "cevaplar": [{"metin": "Açıkça itiraz eder ve daha iyi bir yol öneririm", "deger": "Lider Ruhlu"}, {"metin": "Yanlış da olsa patron ne derse onu yaparım", "deger": "İtaatkar"}, {"metin": "Kendi bildiğim doğruyu gizlice uygularım", "deger": "Bağımsız"}]},
+                {"id": "g9", "soru": "Karşına çözülmemiş bir toplumsal problem çıksa?", "cevaplar": [{"metin": "Bunu çözen bir şirket/uygulama kurup para kazanabilirim derim", "deger": "Fırsatçı"}, {"metin": "Devletin veya belediyenin bunu çözmesini beklerim", "deger": "Vatandaş"}, {"metin": "Gönüllü bir derneğe katılıp yardım ederim", "deger": "Sosyal Girişimci"}]},
+                {"id": "g10", "soru": "Kendi işinin patronu olmanın en büyük zorluğu nedir?", "cevaplar": [{"metin": "Her ay sabit bir maaş garantisinin olmaması", "deger": "Maddi Kaygı"}, {"metin": "Tüm sorumluluğun ve stresin tek bir kişide olması", "deger": "Stres Kaygısı"}, {"metin": "Mesai kavramının bitip 7/24 çalışmak zorunda kalmak", "deger": "Zaman Kaygısı"}]},
+                {"id": "g11", "soru": "Mükemmel bir ürünü piyasaya sürmek için neyi beklersin?", "cevaplar": [{"metin": "Beklemem, eksik de olsa hemen çıkarıp müşteri tepkisine bakarım", "deger": "Çevik (Agile)"}, {"metin": "Her detayın kusursuz olmasını beklerim, yıllar sürse bile", "deger": "Mükemmeliyetçi"}, {"metin": "Rakip bir firmanın benzerini çıkarmasını bekler, onları kopyalarım", "deger": "Takipçi"}]},
+                {"id": "g12", "soru": "Bir karar alırken neye güvenirsin?", "cevaplar": [{"metin": "İçgüdülerime ve vizyonuma", "deger": "Vizyoner"}, {"metin": "Piyasa verilerine ve rakamlara", "deger": "Analitik"}, {"metin": "Danışmanlara ve uzmanlara", "deger": "Garantici"}]},
+                {"id": "g13", "soru": "Hangi söz sana daha çok ilham verir?", "cevaplar": [{"metin": "'Kuralları çiğne ve dünyayı değiştir.'", "deger": "Yıkıcı Yenilikçi"}, {"metin": "'Damlaya damlaya göl olur.'", "deger": "Geleneksel Birikimci"}, {"metin": "'Görünen köy kılavuz istemez.'", "deger": "Gerçekçi"}]},
+                {"id": "g14", "soru": "İş dünyasında en çok kime hayranlık duyarsın?", "cevaplar": [{"metin": "Elon Musk, Steve Jobs gibi sınırları zorlayanlara", "deger": "Girişimci"}, {"metin": "Warren Buffett gibi akıllı ve sakin yatırımcılara", "deger": "Yatırımcı"}, {"metin": "Aziz Sancar gibi bilime adanmış uzmanlara", "deger": "Araştırmacı"}]},
+                {"id": "g15", "soru": "İşler büyümeye başladığında ne yaparsın?", "cevaplar": [{"metin": "Hemen yeni işe alımlar yapar ve kontrolü delege ederim", "deger": "Ölçeklenebilir Lider"}, {"metin": "Her şeyi yine ben kontrol etmek ister, kimseye güvenmem", "deger": "Mikro Yönetici"}, {"metin": "Şirketi büyük bir firmaya satar, tatile çıkarım", "deger": "Seri Girişimci"}]},
+                {"id": "g16", "soru": "Girişimcilikte sence en önemli sermaye nedir?", "cevaplar": [{"metin": "Güçlü bir insan ağı (Network) ve çevre", "deger": "Sosyal Sermaye"}, {"metin": "Sınırsız finansman ve nakit para", "deger": "Maddi Sermaye"}, {"metin": "Yıkılmaz bir zihinsel dayanıklılık (Mental Toughness)", "deger": "Psikolojik Sermaye"}]},
+                {"id": "g17", "soru": "Piyasada dev rakipler varken yeni bir pazara girmek?", "cevaplar": [{"metin": "Onların hantal yapısını kullanır, daha hızlı ve yenilikçi vururum", "deger": "Meydan Okuyan"}, {"metin": "Devlerin olduğu pazara girmem, niş bir alan bulurum", "deger": "Stratejik"}, {"metin": "Girmem, ezilme riskini göze alamam", "deger": "Riskten Kaçınan"}]},
+                {"id": "g18", "soru": "Kendi işini kurmanın en çekici yanı nedir?", "cevaplar": [{"metin": "Kimseye hesap vermemek ve özgürlük", "deger": "Bağımsızlık"}, {"metin": "Sınırsız para kazanma potansiyeli", "deger": "Maddi Kazanç"}, {"metin": "Kendi eserini sıfırdan inşa etme gururu", "deger": "Üretim Tutkusu"}]},
+                {"id": "g19", "soru": "Zaman yönetimi konusunda nasılsındır?", "cevaplar": [{"metin": "Öz disiplinim çok yüksektir, patron olmadan da çalışırım", "deger": "Oto-Kontrol"}, {"metin": "Biri beni zorlamazsa sürekli ertelerim (Procrastination)", "deger": "Dışsal Motivasyon"}, {"metin": "Çok düzensizim ama bir şekilde işleri yetiştiririm", "deger": "Kaotik"}]},
+                {"id": "g20", "soru": "Başarılı bir girişimin formülü sence nedir?", "cevaplar": [{"metin": "%10 Şans, %90 Çok Çalışmak", "deger": "Emek Odaklı"}, {"metin": "%50 Parlak Fikir, %50 Doğru Zamanlama", "deger": "Vizyon Odaklı"}, {"metin": "%30 Doğru Ekip, %70 Doğru Yatırım", "deger": "Sistem Odaklı"}]}
             ]
         }
     ]
 
     tests_collection.insert_many(testler_listesi)
-    print("✅ BİNGGO! 3 Katmanlı yeni nesil test sistemi başarıyla kuruldu!")
+    print(f"✅ BİNGGO! 8 Farklı Kategoride Toplam {len(testler_listesi)*20} Profesyonel Soru Veritabanına Yüklendi!")
 
 except Exception as e:
-    print(f"❌ Hata oluştu: {e}")
+    print(f"❌ Kritik Hata oluştu: {e}")
