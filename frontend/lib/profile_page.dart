@@ -5,12 +5,14 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http; 
 import 'dart:convert'; 
 import 'api_config.dart'; 
+import 'package:flutter/foundation.dart'; // YENİ: debugPrint için eklendi
 
-import 'main.dart'; 
+// Diğer sayfalar
 import 'settings_page.dart';
 import 'notifications_page.dart';
 import 'security_page.dart';
-import 'edit_profile_page.dart'; // 🌟 YENİ: Düzenleme sayfasını import ettik
+import 'edit_profile_page.dart'; 
+import 'package:url_launcher/url_launcher.dart'; // YENİ: LinkedIn için eklendi
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -22,10 +24,14 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   final User? user = FirebaseAuth.instance.currentUser;
 
-  // 🌟 YENİ: Veritabanından gelecek değişkenler
+  // Veritabanından gelecek değişkenler
   String _adSoyad = "";
   String _unvan = "Kariyer Unvanı Belirtilmemiş";
   String _base64Foto = "";
+  String _konum = "";
+  String _hakkimda = "";
+  String _linkedin = "";
+  String _kariyerDurumu = "";
   bool _isLoading = true;
 
   @override
@@ -34,14 +40,13 @@ class _ProfilePageState extends State<ProfilePage> {
     _profilBilgileriniGetir(); // Sayfa açıldığında verileri Python'dan çek
   }
 
-  // 🌟 GÜNCELLENDİ: Gerçek Firebase UID ile Profil Bilgilerini Çeken Fonksiyon
+  // 🌟 SENİN ORİJİNAL FONKSİYONUN (Sadece yeni veriler eklendi)
   Future<void> _profilBilgileriniGetir() async {
     try {
-      if (user == null) return; // Kullanıcı giriş yapmamışsa dur
+      if (user == null) return; 
 
       final url = Uri.parse('${ApiConfig.baseUrl}/api/get_profile');
       
-      // 🌟 Artık sadece GET yapmıyoruz, güvenli şekilde UID gönderiyoruz (POST)
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
@@ -51,9 +56,8 @@ class _ProfilePageState extends State<ProfilePage> {
       if (response.statusCode == 200) {
         final parsedResponse = json.decode(utf8.decode(response.bodyBytes));
         
-        // Sunucudan status: success geldiyse işlemleri yap
         if (parsedResponse['status'] == 'success') {
-          final data = parsedResponse['data']; // Veriler artık 'data' objesinin içinde
+          final data = parsedResponse['data']; 
 
           setState(() {
             String displayEmail = user?.email ?? "";
@@ -63,6 +67,12 @@ class _ProfilePageState extends State<ProfilePage> {
             _unvan = (data['unvan'] != null && data['unvan'] != "") ? data['unvan'] : "Kariyer Unvanı Belirtilmemiş";
             _base64Foto = data['profil_foto'] ?? "";
             
+            // Yeni Eklenen Veriler
+            _konum = data['konum'] ?? "";
+            _hakkimda = data['hakkimda'] ?? "";
+            _linkedin = data['linkedin'] ?? "";
+            _kariyerDurumu = data['kariyer_durumu'] ?? "";
+            
             _isLoading = false;
           });
         }
@@ -70,12 +80,23 @@ class _ProfilePageState extends State<ProfilePage> {
         setState(() => _isLoading = false);
       }
     } catch (e) {
-      print("Profil bilgileri çekilemedi: $e");
+      debugPrint("Profil bilgileri çekilemedi: $e"); // YENİ: print yerine debugPrint
       setState(() => _isLoading = false);
     }
   }
 
-  // Hesaptan Çıkış Yapma
+  // LinkedIn URL'sini Tarayıcıda Açma Fonksiyonu
+  Future<void> _linkeGit(String url) async {
+    if (url.isEmpty) return;
+    final Uri uri = Uri.parse(url.startsWith('http') ? url : 'https://$url');
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Link açılamadı")));
+      }
+    }
+  }
+
+  // 🌟 SENİN ORİJİNAL ÇIKIŞ FONKSİYONUN
   Future<void> _cikisYap() async {
     await FirebaseAuth.instance.signOut();
     if (mounted) {
@@ -83,7 +104,7 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  // Kariyer DNA'sını Sıfırlama Fonksiyonu (Senin kodun, yapısı aynen korundu)
+  // 🌟 SENİN ORİJİNAL DNA SIFIRLAMA FONKSİYONUN (HİÇ DOKUNULMADI)
   Future<void> _kariyerDnasiniSifirla(BuildContext context) async {
     bool onay = await showDialog(
       context: context,
@@ -176,106 +197,173 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
       body: _isLoading 
         ? const Center(child: CircularProgressIndicator(color: Colors.deepPurpleAccent))
-        : ListView(
-            padding: const EdgeInsets.symmetric(vertical: 20),
-            children: [
-              // ── 1. Profil Başlığı (Tıklanabilir ve Düzenlenebilir) ──
-              GestureDetector(
-                onTap: () async {
-                  // Profil Düzenleme sayfasına gidiyoruz
-                  bool? guncellendi = await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => EditProfilePage(
-                        currentName: gosterilecekAd,
-                        currentTitle: _unvan == "Kariyer Unvanı Belirtilmemiş" ? "" : _unvan,
-                      ),
-                    ),
-                  );
-                  
-                  // Eğer düzenleme yapılıp geri dönüldüyse, verileri tekrar çek
-                  if (guncellendi == true) {
-                    setState(() { _isLoading = true; });
-                    _profilBilgileriniGetir();
-                  }
-                },
-                child: Container(
-                  color: Colors.transparent, // Tüm satırın tıklanabilir olması için
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Row(
+        : SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
+            child: Column(
+              children: [
+                // ── 1. MERKEZİ PROFİL BAŞLIĞI (Ortalanmış) ──
+                Center(
+                  child: Column(
                     children: [
-                      // 🌟 FOTOĞRAF KISMI (Eğer Base64 varsa göster, yoksa baş harf göster)
-                      // 🌟 FOTOĞRAF KISMI (Firebase Storage Linki ile çalışır)
-                      CircleAvatar(
-                        radius: 35,
-                        backgroundColor: theme.colorScheme.primary.withOpacity(0.15),
-                        // Eğer gelen veri "http" ile başlıyorsa (yani bir linkse) onu internetten çek
-                        backgroundImage: _base64Foto.startsWith('http') 
-                            ? NetworkImage(_base64Foto) 
-                            : null,
-                        child: !_base64Foto.startsWith('http') 
-                            ? Text(
-                                gosterilecekAd.isNotEmpty ? gosterilecekAd[0] : "K",
-                                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
-                              )
-                            : null,
+                      // Fotoğraf ve Kalem İkonu
+                      Stack(
+                        children: [
+                          CircleAvatar(
+                            radius: 45,
+                            backgroundColor: theme.colorScheme.primary.withOpacity(0.15),
+                            backgroundImage: _base64Foto.startsWith('http') 
+                                ? NetworkImage(_base64Foto) 
+                                : null,
+                            child: !_base64Foto.startsWith('http') 
+                                ? Text(
+                                    gosterilecekAd.isNotEmpty ? gosterilecekAd[0] : "K",
+                                    style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
+                                  )
+                                : null,
+                          ),
+                          // Hata veren kod düzeltildi, sadece Positioned var
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: GestureDetector(
+                              onTap: () async {
+                                bool? guncellendi = await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => EditProfilePage(
+                                      currentName: gosterilecekAd,
+                                      currentTitle: _unvan == "Kariyer Unvanı Belirtilmemiş" ? "" : _unvan,
+                                    ),
+                                  ),
+                                );
+                                if (guncellendi == true) {
+                                  setState(() { _isLoading = true; });
+                                  _profilBilgileriniGetir();
+                                }
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: theme.colorScheme.primary, 
+                                  shape: BoxShape.circle, 
+                                  border: Border.all(color: theme.scaffoldBackgroundColor, width: 2)
+                                ),
+                                child: const Icon(Icons.edit_outlined, color: Colors.white, size: 16),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 20),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(gosterilecekAd, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: theme.colorScheme.onSurface)),
-                            const SizedBox(height: 4),
-                            Text(_unvan, style: TextStyle(fontSize: 14, color: theme.colorScheme.onSurface.withOpacity(0.6))),
-                          ],
-                        ),
-                      ),
-                      // Kalem İkonu (Düzenlenebilir Hissiyatı)
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(color: theme.colorScheme.primary.withOpacity(0.1), shape: BoxShape.circle),
-                        child: Icon(Icons.edit_outlined, color: theme.colorScheme.primary, size: 20),
+                      const SizedBox(height: 16),
+                      Text(gosterilecekAd, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: theme.colorScheme.onSurface)),
+                      const SizedBox(height: 4),
+                      Text(_unvan, style: TextStyle(fontSize: 14, color: theme.colorScheme.onSurface.withOpacity(0.6))),
+                      const SizedBox(height: 12),
+                      
+                      // Rozetler (Konum ve Durum)
+                      Wrap(
+                        spacing: 8,
+                        children: [
+                          if (_konum.isNotEmpty) _buildChip(Icons.location_on_outlined, _konum, theme),
+                          if (_kariyerDurumu.isNotEmpty) _buildChip(Icons.school_outlined, _kariyerDurumu, theme),
+                        ],
                       ),
                     ],
                   ),
                 ),
-              ),
-              
-              const SizedBox(height: 30),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Divider(color: theme.colorScheme.onSurface.withOpacity(0.1), thickness: 1),
-              ),
-              const SizedBox(height: 10),
 
-              // ── 2. Standart Ayarlar Menüsü ──
-              _buildDarkModeToggle(theme), 
-              _buildProfileOption(context, Icons.settings_outlined, "Uygulama Ayarları", const SettingsPage(), theme),
-              _buildProfileOption(context, Icons.notifications_none, "Bildirimler", const NotificationsPage(), theme),
-              _buildProfileOption(context, Icons.security_outlined, "Gizlilik ve Güvenlik", const SecurityPage(), theme),
-              
-              const SizedBox(height: 20),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Divider(color: theme.colorScheme.onSurface.withOpacity(0.1), thickness: 1),
-              ),
-              const SizedBox(height: 10),
+                const SizedBox(height: 24),
+                Divider(color: theme.colorScheme.onSurface.withOpacity(0.1), thickness: 1),
+                const SizedBox(height: 16),
 
-              // ── 3. Kritik İşlemler (Dengeli ve Uyumlu Tasarım) ──
-              _buildDestructiveOption(context, Icons.delete_outline, "Kariyer DNA'mı Sıfırla", () => _kariyerDnasiniSifirla(context), theme),
-              _buildDestructiveOption(context, Icons.logout, "Hesaptan Çıkış Yap", _cikisYap, theme),
+                // ── 2. BİYOGRAFİ VE LINKEDIN BÖLÜMÜ ──
+                if (_hakkimda.isNotEmpty) 
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(color: theme.colorScheme.onSurface.withOpacity(0.03), borderRadius: BorderRadius.circular(15)),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text("Hakkımda", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        const SizedBox(height: 8),
+                        Text(_hakkimda, style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.8), height: 1.5, fontSize: 14)),
+                      ],
+                    ),
+                  ),
+                
+                if (_linkedin.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 24),
+                    child: ElevatedButton.icon(
+                      onPressed: () => _linkeGit(_linkedin),
+                      icon: const Icon(Icons.link, size: 20),
+                      label: const Text("LinkedIn Profilimi Gör", style: TextStyle(fontWeight: FontWeight.bold)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF0077B5), // LinkedIn Mavisi
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(double.infinity, 50),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                  ),
 
-              const SizedBox(height: 40),
-            ],
+                // ── 3. STANDART AYARLAR MENÜSÜ ──
+                _buildMenuTitle("Yönetim", theme),
+                _buildProfileOption(context, Icons.settings_outlined, "Uygulama Ayarları", const SettingsPage(), theme),
+                _buildProfileOption(context, Icons.notifications_none, "Bildirimler", const NotificationsPage(), theme),
+                _buildProfileOption(context, Icons.security_outlined, "Gizlilik ve Güvenlik", const SecurityPage(), theme),
+                
+                const SizedBox(height: 16),
+                Divider(color: theme.colorScheme.onSurface.withOpacity(0.1), thickness: 1),
+                const SizedBox(height: 16),
+
+                // ── 4. KRİTİK İŞLEMLER (Senin orijinal fonksiyonlarına bağlı) ──
+                _buildMenuTitle("Hesap İşlemleri", theme),
+                _buildDestructiveOption(context, Icons.delete_outline, "Kariyer DNA'mı Sıfırla", () => _kariyerDnasiniSifirla(context), theme),
+                _buildDestructiveOption(context, Icons.logout, "Hesaptan Çıkış Yap", _cikisYap, theme),
+
+                const SizedBox(height: 40),
+              ],
+            ),
           ),
     );
   }
 
+  // ── YARDIMCI WIDGETLAR (Arayüz Temizliği İçin) ──
+
+  // Küçük Rozetler (Konum ve Unvan için)
+  Widget _buildChip(IconData icon, String label, ThemeData theme) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(color: theme.colorScheme.primary.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: theme.colorScheme.primary),
+          const SizedBox(width: 4),
+          Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: theme.colorScheme.primary)),
+        ],
+      ),
+    );
+  }
+
+  // Menü Başlıkları
+  Widget _buildMenuTitle(String title, ThemeData theme) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Padding(
+        padding: const EdgeInsets.only(left: 8, bottom: 8),
+        child: Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface.withOpacity(0.5), fontSize: 13)),
+      ),
+    );
+  }
+
   // Standart Menü Şablonu
-  Widget _buildProfileOption(BuildContext context, IconData icon, String title, Widget? destinationPage, ThemeData theme) {
+  Widget _buildProfileOption(BuildContext context, IconData icon, String title, Widget destinationPage, ThemeData theme) {
     return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(color: theme.colorScheme.onSurface.withOpacity(0.05), borderRadius: BorderRadius.circular(10)),
@@ -284,9 +372,7 @@ class _ProfilePageState extends State<ProfilePage> {
       title: Text(title, style: TextStyle(fontWeight: FontWeight.w500, fontSize: 15, color: theme.colorScheme.onSurface)),
       trailing: Icon(Icons.arrow_forward_ios, size: 14, color: theme.colorScheme.onSurface.withOpacity(0.3)),
       onTap: () {
-        if (destinationPage != null) {
-          Navigator.push(context, MaterialPageRoute(builder: (context) => destinationPage));
-        }
+        Navigator.push(context, MaterialPageRoute(builder: (context) => destinationPage));
       },
     );
   }
@@ -294,7 +380,7 @@ class _ProfilePageState extends State<ProfilePage> {
   // Kritik/Tehlikeli İşlemler İçin Menü Şablonu (Kırmızı Renkli)
   Widget _buildDestructiveOption(BuildContext context, IconData icon, String title, VoidCallback onTap, ThemeData theme) {
     return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(color: Colors.redAccent.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
@@ -302,33 +388,6 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: Colors.redAccent)),
       onTap: onTap,
-    );
-  }
-
-  // Karanlık Mod Şalteri
-  Widget _buildDarkModeToggle(ThemeData theme) {
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
-      leading: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(color: theme.colorScheme.primary.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
-        child: Icon(Icons.dark_mode_outlined, color: theme.colorScheme.primary, size: 22),
-      ),
-      title: Text("Karanlık Mod", style: TextStyle(fontWeight: FontWeight.w500, fontSize: 15, color: theme.colorScheme.onSurface)),
-      trailing: ValueListenableBuilder<ThemeMode>(
-        valueListenable: temaSalteri,
-        builder: (context, guncelTema, child) {
-          bool isDark = guncelTema == ThemeMode.dark || (guncelTema == ThemeMode.system && theme.brightness == Brightness.dark);
-          return Switch(
-            value: isDark,
-            activeColor: theme.colorScheme.primary,
-            activeTrackColor: theme.colorScheme.primary.withOpacity(0.3),
-            onChanged: (bool value) {
-              temaSalteri.value = value ? ThemeMode.dark : ThemeMode.light;
-            },
-          );
-        }
-      ),
     );
   }
 }

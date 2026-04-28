@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // SAYFALARIMIZ
 import 'login_page.dart';
@@ -19,13 +20,18 @@ final ValueNotifier<ThemeMode> temaSalteri = ValueNotifier(ThemeMode.system);
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(fileName: ".env");
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // 🌟 YENİ: UYGULAMA AÇILIRKEN HAFIZAYA BAK
+  final prefs = await SharedPreferences.getInstance();
+  final bool? isDarkMode = prefs.getBool('isDarkMode');
   
-  // ESKİ: RoadmapProvider silindiği için MultiProvider'ı kaldırdık, 
-  // uygulamayı doğrudan temiz bir şekilde başlatıyoruz.
+  if (isDarkMode != null) {
+    temaSalteri.value = isDarkMode ? ThemeMode.dark : ThemeMode.light;
+  }
+
   runApp(const KariyerUygulamasi());
 }
 

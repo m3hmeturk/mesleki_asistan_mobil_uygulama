@@ -812,7 +812,27 @@ def update_profile():
         print("❌ Profil Güncelleme Hatası:", e)
         return jsonify({"status": "error", "message": str(e)}), 500
 
+@app.route('/api/user/delete_account', methods=['POST'])
+def delete_account():
+    try:
+        data = request.get_json()
+        uid = data.get('uid')
 
+        if not uid:
+            return jsonify({'status': 'error', 'message': 'UID gerekli'}), 400
+
+        # MongoDB'den kullanıcı dokümanını sil
+        # Not: Eğer kullanıcının test sonuçları farklı bir koleksiyondaysa (örn: tests_collection) 
+        # onları da burada silmelisin.
+        result = users_collection.delete_one({'uid': uid})
+
+        if result.deleted_count > 0:
+            return jsonify({'status': 'success', 'message': 'Kullanıcı veritabanından silindi'}), 200
+        else:
+            return jsonify({'status': 'error', 'message': 'Kullanıcı bulunamadı'}), 404
+
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 
 # ==========================================
 # SUNUCUYU ÇALIŞTIRAN KOD
