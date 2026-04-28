@@ -7,7 +7,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'api_config.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'change_password_page.dart';
+import 'change_password_page.dart'; // Şifre değiştirme sayfası
 
 class SecurityPage extends StatefulWidget {
   const SecurityPage({super.key});
@@ -19,13 +19,12 @@ class SecurityPage extends StatefulWidget {
 class _SecurityPageState extends State<SecurityPage> {
   final User? user = FirebaseAuth.instance.currentUser;
 
-
-
- // ── HESABI TAMAMEN SİLME (GÜNCELLENDİ) ──
+  // ── 1. HESABI TAMAMEN SİLME (TAM VAKUM SİSTEMİ) ──
   Future<void> _hesabiTamamenSil() async {
     bool? onay = await _silmeOnayiAl();
     if (onay != true || user == null) return;
 
+    // Yükleniyor animasyonu
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -51,16 +50,15 @@ class _SecurityPageState extends State<SecurityPage> {
       try {
         await FirebaseStorage.instance.ref().child('profil_fotograflari/$uid.jpg').delete();
       } catch (e) {
-        // Eğer kullanıcının fotoğrafı yoksa hata verebilir, sorun değil devam et.
         debugPrint("Storage silme atlandı (Dosya yok olabilir): $e");
       }
 
-      // 3. ADIM: Firebase Auth Kaydını Sil (Kritik Nokta!)
+      // 3. ADIM: Firebase Auth Kaydını Sil (Kritik Nokta)
       await user!.delete();
 
-      // İŞLEM BAŞARILI
+      // İŞLEM BAŞARILI: Kullanıcıyı giriş sayfasına at
       if (!mounted) return;
-      Navigator.pop(context); // Yükleniyor'u kapat
+      Navigator.pop(context); // Yükleniyor dialogunu kapat
       Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
       
       ScaffoldMessenger.of(context).showSnackBar(
@@ -69,9 +67,9 @@ class _SecurityPageState extends State<SecurityPage> {
 
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
-      Navigator.pop(context);
+      Navigator.pop(context); // Yükleniyor dialogunu kapat
       
-      // EĞER KULLANICI UZUN SÜREDİR GİRİŞ YAPMADIYSA BU HATA DÖNER
+      // EĞER KULLANICI UZUN SÜREDİR GİRİŞ YAPMADIYSA BU HATA DÖNER (Firebase Kuralı)
       if (e.code == 'requires-recent-login') {
         _bilgiMesajiGoster(
           "Güvenlik nedeniyle bu işlemi yapabilmek için yeniden giriş yapmanız gerekiyor. Lütfen çıkış yapıp tekrar girin.", 
@@ -82,15 +80,15 @@ class _SecurityPageState extends State<SecurityPage> {
       }
     } catch (e) {
       if (!mounted) return;
-      Navigator.pop(context);
+      Navigator.pop(context); // Yükleniyor dialogunu kapat
       _bilgiMesajiGoster("Beklenmedik bir hata oluştu: $e", Colors.redAccent);
     }
   }
 
-  // ── 3. YASAL LİNKLERİ AÇMA ──
+  // ── 2. YASAL LİNKLERİ AÇMA ──
   Future<void> _linkeGit(String url) async {
     final Uri uri = Uri.parse(url);
-    if (!await launchUrl(uri)) {
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
       _bilgiMesajiGoster("Sayfa açılamadı.", Colors.redAccent);
     }
   }
@@ -116,10 +114,9 @@ class _SecurityPageState extends State<SecurityPage> {
             ListTile(
               leading: Icon(Icons.lock_reset, color: theme.colorScheme.primary),
               title: const Text("Şifremi Değiştir"),
-              subtitle: const Text("Hesap giriş şifreni güvenle yenile"), // Alt yazıyı da güncelledik
+              subtitle: const Text("Hesap giriş şifreni güvenle yenile"),
               trailing: const Icon(Icons.arrow_forward_ios, size: 16),
               onTap: () {
-                // YENİ: Direkt sayfaya yönlendiriyoruz
                 Navigator.push(context, MaterialPageRoute(builder: (context) => const ChangePasswordPage()));
               },
             ),
@@ -137,14 +134,14 @@ class _SecurityPageState extends State<SecurityPage> {
                   leading: Icon(Icons.privacy_tip_outlined, color: theme.colorScheme.primary),
                   title: const Text("Gizlilik Politikası"),
                   trailing: const Icon(Icons.open_in_new, size: 16),
-                  onTap: () => _linkeGit("https://kariyerbot.com/gizlilik"), // Örnek link
+                  onTap: () => _linkeGit("https://www.google.com"), // Play Store'a atarken kendi siteni yazarsın
                 ),
                 _ayirici(theme),
                 ListTile(
                   leading: Icon(Icons.description_outlined, color: theme.colorScheme.primary),
                   title: const Text("Kullanım Koşulları"),
                   trailing: const Icon(Icons.open_in_new, size: 16),
-                  onTap: () => _linkeGit("https://kariyerbot.com/kosullar"), // Örnek link
+                  onTap: () => _linkeGit("https://www.google.com"), // Play Store'a atarken kendi siteni yazarsın
                 ),
               ],
             ),

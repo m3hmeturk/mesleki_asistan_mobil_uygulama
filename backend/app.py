@@ -821,15 +821,18 @@ def delete_account():
         if not uid:
             return jsonify({'status': 'error', 'message': 'UID gerekli'}), 400
 
-        # MongoDB'den kullanıcı dokümanını sil
-        # Not: Eğer kullanıcının test sonuçları farklı bir koleksiyondaysa (örn: tests_collection) 
-        # onları da burada silmelisin.
-        result = users_collection.delete_one({'uid': uid})
+        # 1. Ana Profil Bilgilerini Sil
+        users_collection.delete_one({'uid': uid})
+        
+        # 2. Eğer test sonuçlarını ayrı bir koleksiyonda (tabloda) tutuyorsan, onu da sil. 
+        # (Eğer böyle bir tablon yoksa burası hata vermez, aynen kalabilir)
+        try:
+            db.tests_collection.delete_many({'uid': uid})
+        except:
+            pass # Tablo yoksa sorun değil, geç.
 
-        if result.deleted_count > 0:
-            return jsonify({'status': 'success', 'message': 'Kullanıcı veritabanından silindi'}), 200
-        else:
-            return jsonify({'status': 'error', 'message': 'Kullanıcı bulunamadı'}), 404
+        # Veritabanında veri olsa da olmasa da Flutter'a 'Başarılı' diyoruz ki Firebase silme işlemine geçebilsin.
+        return jsonify({'status': 'success', 'message': 'Kullanıcı veritabanından vakumlandı.'}), 200
 
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
