@@ -8,6 +8,9 @@ import 'dart:convert';
 import 'api_config.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'change_password_page.dart'; // Şifre değiştirme sayfası
+import 'privacy_policy_page.dart';
+import 'usage_terms_page.dart';
+import 'data_processing_page.dart';
 
 class SecurityPage extends StatefulWidget {
   const SecurityPage({super.key});
@@ -134,14 +137,18 @@ class _SecurityPageState extends State<SecurityPage> {
                   leading: Icon(Icons.privacy_tip_outlined, color: theme.colorScheme.primary),
                   title: const Text("Gizlilik Politikası"),
                   trailing: const Icon(Icons.open_in_new, size: 16),
-                  onTap: () => _linkeGit("https://www.google.com"), // Play Store'a atarken kendi siteni yazarsın
+                  onTap: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => const PrivacyPolicyPage()));
+                  },
                 ),
                 _ayirici(theme),
                 ListTile(
                   leading: Icon(Icons.description_outlined, color: theme.colorScheme.primary),
                   title: const Text("Kullanım Koşulları"),
                   trailing: const Icon(Icons.open_in_new, size: 16),
-                  onTap: () => _linkeGit("https://www.google.com"), // Play Store'a atarken kendi siteni yazarsın
+                  onTap: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => const UsageTermsPage()));
+                  },
                 ),
               ],
             ),
@@ -157,7 +164,9 @@ class _SecurityPageState extends State<SecurityPage> {
               leading: Icon(Icons.info_outline, color: theme.colorScheme.primary),
               title: const Text("Verilerim Nasıl İşleniyor?"),
               subtitle: const Text("KVKK ve Veri güvenliği hakkında bilgi al"),
-              onTap: () => _bilgiMesajiGoster("Verileriniz Kariyer Asistanı AI analizi dışında 3. taraflarla asla paylaşılmaz.", Colors.blueGrey),
+              onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const DataProcessingPage()));
+              },
             ),
             theme,
           ),
